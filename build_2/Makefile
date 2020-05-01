@@ -1,0 +1,149 @@
+EJSVM_DIR = ../ejsvm
+MBED_DIR = ../mbed
+
+.PRECIOUS: %.c %.h %.o
+
+##
+## configuration files
+##
+
+DATATYPES = $(EJSVM_DIR)/datatypes/default_32.def
+#DATATYPES = $(EJSVM_DIR)/datatypes/default.def
+OPERANDSPEC = $(EJSVM_DIR)/operand-spec/any.spec
+# OPERANDSPEC = $(EJSVM_DIR)/operand-spec/fixnum-unspec.spec
+SUPERINSNSPEC = $(EJSVM_DIR)/superinsn-spec/all.si
+SUPERINSNTYPE = 4
+#VMDLC_FLAGS=-no-match-opt
+
+##
+## compile flags
+##
+
+CFLAGS = -O2 -DNDEBUG -UDEBUG $(HEAPSIZE)
+# CFLAGS = -Os -DNDEBUG -UDEBUG $(HEAPSIZE)
+# CFLAGS = -O0 -g $(HEAPSIZE)
+INSNGEN_FLAGS = -Xgen:pad_cases true -Xcmp:opt_pass MR:S -Xcmp:rand_seed 0
+
+##
+## VMDL
+##
+USE_VMDL=false
+
+##
+## commands
+##
+
+#CC = gcc
+CC = arm-none-eabi-gcc
+SED = gsed
+# SED = sed
+#PYTHON = python
+PYTHON = python3
+# CPP_VMDL = $(CPP) -E -x c -P
+COCCINELLE = spatch
+# COCCINELLE = spatch --python python3
+
+##
+## Mbed
+##
+MBED = true
+AS = arm-none-eabi-gcc
+CPP = arm-none-eabi-g++
+LD = arm-none-eabi-gcc
+ELF2BIN = arm-none-eabi-objcopy
+PREPROC = arm-none-eabi-cpp -E -P -Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r -Wl,--wrap,_free_r -Wl,--wrap,_realloc_r -Wl,--wrap,_memalign_r -Wl,--wrap,_calloc_r -Wl,--wrap,exit -Wl,--wrap,atexit -Wl,-n -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -DMBED_ROM_START=0x0 -DMBED_ROM_SIZE=0x100000 -DMBED_RAM1_START=0x1fff0000 -DMBED_RAM1_SIZE=0x10000 -DMBED_RAM_START=0x20000000 -DMBED_RAM_SIZE=0x30000 -DMBED_BOOT_STACK_SIZE=1024 -DXIP_ENABLE=0
+
+##
+## paths
+##
+
+INCLUDES =
+# INCLUDES = -I/opt/local/include
+LIBS =
+# LIBS = -L/opt/local/lib
+
+## 
+## options
+## 
+
+OPT_REGEXP    = none
+# OPT_REGEXP    = oniguruma
+#OPT_GC        = native
+OPT_GC        = bibop
+# OPT_GC        = none
+
+## heap size in bytes
+HEAPSIZE      = -DJS_SPACE_BYTES=10485760
+
+## enable profiling to create customised VM
+# CFLAGS       += -DPROFILE
+
+## word size
+# INSN32/64    -- instruction size
+# JSVALUE32/64 -- JSValue size  (>= ponter size)
+# ALIGN32/64   -- alignment of heap-allocated data
+CFLAGS        += -DBIT_INSN32 -DBIT_ALIGN32 -DBIT_JSVALUE32
+#CFLAGS        += -DBIT_INSN64 -DBIT_ALIGN64 -DBIT_JSVALUE64
+
+##
+## developer options
+##
+
+## accept SBC files
+CFLAGS       += -DUSE_SBC
+## GC collects internal nodes in hidden class graph
+CFLAGS       += -DHC_SKIP_INTERNAL
+## cache shapes at allocation site
+CFLAGS       += -DALLOC_SITE_CACHE
+## GC collects unused shapes (effective if ALLOC_SITE_CACHE is specified)
+CFLAGS       += -DWEAK_SHAPE_LIST
+## Do not hold the list of shapes.  Instead, only the largest shape is held.
+#CFLAGS       += -DNO_SHAPE_CACHE
+## use inlne cache
+CFLAGS       += -DINLINE_CACHE
+
+## show GC profiling information (make --gc-prof available)
+CFLAGS       += -DGC_PROF
+## show hidden class related profiling information (make --hc-prof available)
+CFLAGS       += -DHC_PROF
+## print flonum usage
+CFLAGS       += -DFLONUM_SPACE
+
+## use explicit mark stack rather than recursive call
+#CFLAGS      += -DMARK_STACK
+
+## array size strategy
+CFLAGS       += -DNEW_ASIZE_STRATEGY
+
+##
+## BiBoP options
+##
+
+## page caches the size of bitmaps
+CFALGS       += -DBIBOP_CACHE_BMP_GRANULES
+## free pages of size one is linked in a separate list
+CFLAGS       += -DBIBOP_SEGREGATE_1PAGE
+## allocate pages of size one from the bottom of the heap
+CFLAGS       += -DBIBOP_2WAY_ALLOC
+## link free blocks in a page to form a freelist
+CFLAGS       += -DBIBOP_FREELIST
+## use flonum pages as if it is a hashtable to encourage sahreing flonum objects
+#CFLAGS       += -DFLONUM_SPACE
+## debug
+CFLAGS       += -DVERIFY_BIBOP
+
+##
+## debug/sanity check options
+##
+
+## show values of properties in GETPROP/SETPROP instructions
+#CFLAGS   += -DDEBUG_GETPROP_VALUE
+
+## GC reports unmatured (not reached the end of HC
+## transisiton graph) dead objects
+#CFLAGS   += -DCHECK_MATURED
+
+## fix rand seed
+CFLAGS    += -DNO_SRAND
+
+include $(EJSVM_DIR)/common.mk
