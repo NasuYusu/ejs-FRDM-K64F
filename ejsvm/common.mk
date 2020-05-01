@@ -3054,7 +3054,7 @@ ejsvm.spec specfile-fingerprint.h: $(EJSVM_DIR)/instructions.def $(SUPERINSNSPEC
 	$(SPECGEN) --insndef $(EJSVM_DIR)/instructions.def\
 		--sispec $(SUPERINSNSPEC) -o ejsvm.spec\
 		--fingerprint specfile-fingerprint.h
-	cp $@ ../
+	cp ejsvm.spec ../
 endif
 
 $(INSN_HANDCRAFT):insns/%.inc: $(EJSVM_DIR)/insns-handcraft/%.inc
