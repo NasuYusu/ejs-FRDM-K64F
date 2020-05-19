@@ -137,7 +137,7 @@ typedef struct {
 #define LOADBUFLEN 1024
 
 #ifdef USE_SBC
-extern int insn_load_sbc(Context *, Instruction *, int, int, int, int);
+extern int insn_load_sbc(Context *, Instruction *, int, int, int, int, char **);
 #endif
 
 #ifdef USE_OBC
@@ -156,13 +156,18 @@ extern void set_function_table(FunctionTable *, int, Instruction *,
                                int, int, int, int, int);
 
 FILE *file_pointer;
+int sbc_idx = 0;
 
 #ifdef USE_SBC
 /*
  * reads the next line from the input stream
  */
-inline char *step_load_code(char *buf, int buflen) {
+/*inline char *step_load_code(char *buf, int buflen) {
   return fgets(buf, buflen, file_pointer == NULL? stdin: file_pointer);
+}*/
+inline char *step_load_code(char *buf, char **sbcpt) {
+  strcpy(buf, sbcpt[++sbc_idx]);
+  return buf;
 }
 
 #define DELIM " \n\r"
@@ -183,7 +188,7 @@ inline int check_read_token(char *buf, char *tok) {
 /*
  * codeloader
  */
-int code_loader(Context *ctx, FunctionTable *ftable, int ftbase) {
+int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **sbcptr) {
   Instruction *insns;
   JSValue *consttop;
   int nfuncs, callentry, sendentry, nlocals, ninsns, nconsts;
@@ -197,7 +202,8 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase) {
 #endif
 
 #ifdef USE_SBC
-#define next_buf_sbc() (step_load_code(buf, LOADBUFLEN) != NULL)
+//#define next_buf_sbc() (step_load_code(buf, LOADBUFLEN) != NULL)
+#define next_buf_sbc() (step_load_code(buf, sbcptr) != NULL)
 #define buf_to_int_sbc(s)   check_read_token(buf, s)
 #endif
 
@@ -323,13 +329,13 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase) {
 #if defined(USE_OBC) && defined(USE_SBC)
       ret = (obcsbc == FILE_OBC?
              insn_load_obc(ctx, insns, ninsns, j, &citable, ftbase):
-             insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase));
+             insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase, sbcptr));
 #else
 #ifdef USE_OBC
       ret = insn_load_obc(ctx, insns, ninsns, j, &citable, ftbase);
 #endif
 #ifdef USE_SBC
-      ret = insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase);
+      ret = insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase, sbcptr);
 #endif
 #endif
       if (ret == LOAD_FAIL)
@@ -665,14 +671,14 @@ int load_regexp_sbc(Context *ctx, char *src, JSValue *ctop,
 #endif /* USE_REGEXP */
 
 int insn_load_sbc(Context *ctx, Instruction *insns, int ninsns,
-                  int nconsts, int pc, int ftbase) {
+                  int nconsts, int pc, int ftbase, char **sbcptr_s) {
   char buf[LOADBUFLEN];
   char *tokp;
   Opcode oc;
   JSValue *ctop;
 
   ctop = (JSValue *)(&insns[ninsns]);
-  step_load_code(buf, LOADBUFLEN);
+  step_load_code(buf, sbcptr_s);
   tokp = first_token(buf);
 #ifdef ALLOC_SITE_CACHE
   init_alloc_site(&insns[pc].alloc_site);

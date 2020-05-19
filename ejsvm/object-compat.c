@@ -473,7 +473,7 @@ JSValue new_iterator(Context *ctx, JSValue obj) {
 /*  data conversion functions */
 char *space_chomp(char *str)
 {
-  while (isspace(*str)) str++;
+  while (isspace((int) *str)) str++;
   return str;
 }
 
@@ -482,7 +482,7 @@ double cstr_to_double(char* cstr)
   char* endPtr;
   double ret;
   ret = strtod(cstr, &endPtr);
-  while (isspace(*endPtr)) endPtr++;
+  while (isspace((int) *endPtr)) endPtr++;
   if (*endPtr == '\0') return ret;
   else return NAN;
 }

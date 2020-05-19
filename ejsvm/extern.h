@@ -145,7 +145,7 @@ extern JSValue invoke_builtin(Context *, JSValue, JSValue, int, JSValue, int);
 extern char *insn_nemonic(int);
 extern void init_code_loader(FILE *);
 extern void end_code_loader(void);
-extern int code_loader(Context *, FunctionTable *, int);
+extern int code_loader(Context *, FunctionTable *, int, char **);
 extern JSValue specstr_to_jsvalue(const char *);
 
 /*

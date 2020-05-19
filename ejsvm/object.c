@@ -908,7 +908,7 @@ static void print_property_map(char *key, PropertyMap *pm)
   if (key == NULL)
     key = "(root)";
   printf("======== %s start ========\n", key);
-  printf("HC: %p %p %p %d %d %d %s %s\n",
+  printf("HC: %p %p %p %d %ld %ld %s %s\n",
          pm,
          pm->prev,
          pm->shapes,

@@ -11,6 +11,28 @@
 #define EXTERN
 #include "header.h"
 
+/* paste sbc file contents */
+char *sbc_contents[] = {"fingerprint 36",
+"funcLength 1",
+"callentry 0",
+"sendentry 0",
+"numberOfLocals 0",
+"numberOfInstructions 13",
+"numberOfConstants 2",
+"setfl 8",
+"fixnum 1 100",
+"string 2 #0=\"x\"",
+"setglobal 2 1",
+"string 1 #1=\"print\"",
+"getglobal 1 1",
+"getglobal 2 2",
+"move 8 2",
+"call 1 1",
+"setfl 8",
+"geta 1",
+"seta 1",
+"ret"};
+
 /*
  *  phase
  */
@@ -139,7 +161,7 @@ int process_options(int ac, char *av[]) {
 }
 
 void print_cputime(time_t sec, suseconds_t usec) {
-  printf("total CPU time = %ld.%d msec, total GC time =  %d.%d msec (#GC = %d)\n",
+  printf("total CPU time = %lld.%d msec, total GC time =  %d.%d msec (#GC = %d)\n",
          sec * 1000 + usec / 1000, (int)(usec % 1000),
          gc_sec * 1000 + gc_usec / 1000, gc_usec % 1000, generation - 1);
 }
@@ -319,7 +341,6 @@ int main(int argc, char *argv[]) {
   GC_INIT();
 #endif
   init_memory(heap_limit);
-
   init_string_table(STRING_TABLE_SIZE);
   init_context(regstack_limit, &context);
   init_global_constants();
@@ -327,34 +348,38 @@ int main(int argc, char *argv[]) {
   init_global_objects(context);
   reset_context(context, function_table);
   context->global = gconsts.g_global;
+  printf("init ok\n");
+
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
 #endif /* NO_SRAND */
 
-  for (; k < iter; k++) {
+  for (; k <= iter; k++) {
 #if defined(USE_OBC) && defined(USE_SBC)
     obcsbc = FILE_OBC;
 #endif
-    if (k >= argc)
-      fp = stdin;   /* stdin always use OBC */
-    else {
+    //if (k >= argc)
+     // fp = stdin;   /* stdin always use OBC */
+    /*else {
       if ((fp = fopen(argv[k], "r")) == NULL)
         LOG_EXIT("%s: No such file.\n", argv[k]);
 #if defined(USE_OBC) && defined(USE_SBC)
       obcsbc = file_type(argv[k]);
 #endif
-    }
-    init_code_loader(fp);
+    }*/
+    /*init_code_loader(fp);
     base_function = n;
     nf = code_loader(context, function_table, n);
-    end_code_loader();
+    end_code_loader();*/
+    base_function = n;
+    nf = code_loader(context, function_table, n, sbc_contents);
     if (nf > 0) n += nf;
-    else if (fp != stdin) {
-        LOG_ERR("code_loader returns %d\n", nf);
-        continue;
-    } else
+    //else if (fp != stdin) {
+     //   LOG_ERR("code_loader returns %d\n", nf);
+    //    continue;
+    //} else
       /* stdin is closed possibly by pressing ctrl-D */
-      break;
+    //  break;
 
     /* obtains the time before execution */
 #ifdef USE_PAPI
@@ -550,6 +575,12 @@ void debug_print(Context *context, int n) {
   res = get_a(context);
   simple_print(res);
   printf("\n");
+}
+
+int	getrusage (int a, struct rusage* p) {
+  p->ru_utime.tv_sec = 0;
+  p->ru_utime.tv_usec = 0;
+  return 0;
 }
 
 /* Local Variables:      */

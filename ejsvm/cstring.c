@@ -23,13 +23,13 @@ size_t cstr_length(const char *p)
 
 const char *ccstr_skip_space(const char *str)
 {
-  while (isspace(*str)) str++;
+  while (isspace((int) *str)) str++;
   return str;
 }
 
 char *cstr_skip_space(char *str)
 {
-  while (isspace(*str)) str++;
+  while (isspace((int) *str)) str++;
   return str;
 }
 
