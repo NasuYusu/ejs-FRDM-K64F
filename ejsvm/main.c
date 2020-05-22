@@ -356,7 +356,8 @@ int main(int argc, char *argv[]) {
 
   for (; k <= iter; k++) {
 #if defined(USE_OBC) && defined(USE_SBC)
-    obcsbc = FILE_OBC;
+    //obcsbc = FILE_OBC;
+    obcsbc = FILE_SBC;
 #endif
     //if (k >= argc)
      // fp = stdin;   /* stdin always use OBC */
