@@ -166,7 +166,7 @@ int sbc_idx = 0;
   return fgets(buf, buflen, file_pointer == NULL? stdin: file_pointer);
 }*/
 inline char *step_load_code(char *buf, char **sbcpt) {
-  strcpy(buf, sbcpt[++sbc_idx]);
+  strcpy(buf, sbcpt[sbc_idx++]);
   return buf;
 }
 
