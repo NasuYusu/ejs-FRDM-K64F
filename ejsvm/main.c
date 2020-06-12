@@ -348,13 +348,13 @@ int main(int argc, char *argv[]) {
   init_global_objects(context);
   reset_context(context, function_table);
   context->global = gconsts.g_global;
-  printf("init ok\n");
+  printf("init ok\n\r");
 
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
 #endif /* NO_SRAND */
 
-  for (; k <= iter; k++) {
+  //for (; k <= iter; k++) {
 #if defined(USE_OBC) && defined(USE_SBC)
     //obcsbc = FILE_OBC;
     obcsbc = FILE_SBC;
@@ -478,7 +478,7 @@ int main(int argc, char *argv[]) {
       printf("\xff");
       fflush(stdout);
     }
-  }
+  //}
 #ifdef HC_PROF
   if (hcprint_flag == TRUE)
     hcprof_print_all_hidden_class();

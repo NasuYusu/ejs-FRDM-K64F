@@ -281,7 +281,19 @@ endif
 CHECKFILES_DIR = checkfiles
 GCCHECK_PATTERN = $(EJSVM_DIR)/gccheck.cocci
 
-all: ejsvm ejsc.jar ejsi
+all: ejsvm ejsc.jar ejsi ejs_cflags.txt ejs_ofiles.txt ejs_hfiles.txt ejs_insns.txt
+
+ejs_cflags.txt:
+	echo $(filter-out -std=gnu89,$(CFLAGS)) > ejs_cflags.txt
+
+ejs_ofiles.txt:
+	echo $(OFILES) > ejs_ofiles.txt
+
+ejs_hfiles.txt:
+	echo $(HFILES) > ejs_hfiles.txt
+
+ejs_insns.txt:
+	echo $(INSN_FILES) > ejs_insns.txt
 
 ejsc.jar: $(EJSC)
 	cp $< $@
@@ -520,6 +532,7 @@ clean:
 	rm -rf si
 	rm -rf insns-vmdl
 	rm -f ejsvm ejsvm.spec ejsi ejsc.jar
+	rm -f *.txt
 
 cleanest:
 	rm -f *.o $(GENERATED_HFILES) vmloop-cases.inc *.c *.h
@@ -536,3 +549,4 @@ cleanest:
 	(cd $(EJSC_DIR); ant clean)
 	rm -f $(EJSC)
 	make -C $(EJSI_DIR) clean
+	rm -f *.txt

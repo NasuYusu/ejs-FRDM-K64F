@@ -96,7 +96,7 @@ typedef enum cell_type_t {
   CELLT_UNWIND        = 0x1E,
   CELLT_PROPERTY_MAP_LIST = 0x1F,
   NUM_CELL_TYPES,
-  MAX_NUM_CELL_TYPES  = (1 << LOG_MAX_NUM_CELL_TYPES) - 1
+  MAX_NUM_CELL_TYPES  = (1 << LOG_MAX_NUM_CELL_TYPES) - 1,
 } cell_type_t;
 
 /*

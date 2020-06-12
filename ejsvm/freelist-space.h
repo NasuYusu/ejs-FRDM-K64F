@@ -93,7 +93,7 @@ static inline void mark_cell(void *p);
 static inline int is_marked_cell(void *p);
 static inline  int test_and_mark_cell(void *p);
 extern void space_init(size_t bytes);
-extern void *space_alloc(uintptr_t request_bytes, cell_type_t type);
+extern void *space_alloc(uintptr_t request_bytes, uint32_t type);
 extern void sweep(void);
 static inline int space_check_gc_request();
 static inline int in_js_space(void *addr_);
