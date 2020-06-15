@@ -82,7 +82,8 @@ typedef struct str_table {
   unsigned int count;     /* # of non-NULL entries in the array */
 } StrTable;
 
-#define STRING_TABLE_SIZE  5000
+//#define STRING_TABLE_SIZE  5000
+#define STRING_TABLE_SIZE 441
 
 #define INTERN_HARD  0
 #define INTERN_SOFT  1

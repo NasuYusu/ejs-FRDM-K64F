@@ -64,11 +64,18 @@
 #include "types.h"
 #include "context.h"
 #include "gc.h"
+
+#ifdef COPYGC
+#include "copy-collector.h"
+#else /* MARKSWEEP */
+#include "marksweep-collector.h"
 #ifdef BIBOP
 #include "bibop-space.h"
 #else /* BIBOP */
 #include "freelist-space.h"
 #endif /* BIBIOP */
+#endif /* MARKSWEEP */
+
 #include "hash.h"
 #include "log.h"
 #include "instructions.h"
@@ -82,11 +89,15 @@
 #include "context-inl.h"
 #include "types-inl.h"
 #include "gc-inl.h"
+
+#ifdef COPYGC
+#else /* MARKSWEEP */
 #ifdef BIBOP
 #include "bibop-space-inl.h"
 #else /* BIBOP */
 #include "freelist-space-inl.h"
 #endif /* BIBOP */
+#endif /* MARKSWEEP */
 
 #endif /* HEADER_H_ */
 
