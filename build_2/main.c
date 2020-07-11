@@ -161,7 +161,7 @@ int process_options(int ac, char *av[]) {
 }
 
 void print_cputime(time_t sec, suseconds_t usec) {
-  printf("total CPU time = %lld.%d msec, total GC time =  %d.%d msec (#GC = %d)\n",
+  printf("total CPU time = %ld.%03d msec, total GC time =  %d.%03d msec (#GC = %d)\n",
          sec * 1000 + usec / 1000, (int)(usec % 1000),
          gc_sec * 1000 + gc_usec / 1000, gc_usec % 1000, generation - 1);
 }
@@ -273,7 +273,7 @@ int file_type(char *name) {
  */
 int main(int argc, char *argv[]) {
   /* If input program is given from a file, fp is set to NULL. */
-  FILE *fp = NULL;
+  //FILE *fp = NULL;
   struct rusage ru0, ru1;
   int base_function = 0;
   int k, iter, nf;
@@ -348,16 +348,17 @@ int main(int argc, char *argv[]) {
   init_global_objects(context);
   reset_context(context, function_table);
   context->global = gconsts.g_global;
-  printf("init ok\n");
+  printf("init ok\n\r");
 
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
 #endif /* NO_SRAND */
 
-  for (; k <= iter; k++) {
-/*#if defined(USE_OBC) && defined(USE_SBC)
-    obcsbc = FILE_OBC;
-#endif*/
+  //for (; k <= iter; k++) {
+#if defined(USE_OBC) && defined(USE_SBC)
+    //obcsbc = FILE_OBC;
+    obcsbc = FILE_SBC;
+#endif
     //if (k >= argc)
      // fp = stdin;   /* stdin always use OBC */
     /*else {
@@ -477,7 +478,7 @@ int main(int argc, char *argv[]) {
       printf("\xff");
       fflush(stdout);
     }
-  }
+  //}
 #ifdef HC_PROF
   if (hcprint_flag == TRUE)
     hcprof_print_all_hidden_class();
