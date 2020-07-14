@@ -1,0 +1,57 @@
+
+BUILD/ejsvm:     file format elf32-littlearm
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .interrupts   00000400  00000000  00000000  00000114  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  1 .flash_config 00000010  00000400  00000400  00000514  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  2 .text         00023440  00000440  00000440  00000540  2**6
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .ARM          00000008  00023880  00023880  00023980  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .init_array   00000004  00023888  00023888  00023988  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+  5 .fini_array   00000004  0002388c  0002388c  0002398c  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+  6 .interrupts_ram 00000400  1fff0000  1fff0000  00026508  2**0
+                  ALLOC
+  7 .crash_data_ram 00000100  1fff0400  1fff0400  00026508  2**0
+                  ALLOC
+  8 .heap_0       0000fb00  1fff0500  1fff0500  00026508  2**0
+                  ALLOC
+  9 .data         00002b78  20000000  00023890  00023990  2**3
+                  CONTENTS, ALLOC, LOAD, DATA
+ 10 .uninitialized 00000008  20002b78  00026408  00026508  2**0
+                  ALLOC
+ 11 .bss          000073f8  20002b80  00026408  00026508  2**3
+                  ALLOC
+ 12 .heap         00025c88  20009f78  00026408  00026508  2**0
+                  ALLOC
+ 13 .ARM.attributes 0000002e  00000000  00000000  00026508  2**0
+                  CONTENTS, READONLY
+ 14 .debug_info   0011bd61  00000000  00000000  00026536  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 15 .debug_abbrev 0001acbf  00000000  00000000  00142297  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 16 .debug_loc    000591ed  00000000  00000000  0015cf56  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 17 .debug_aranges 00003098  00000000  00000000  001b6148  2**3
+                  CONTENTS, READONLY, DEBUGGING
+ 18 .debug_ranges 00015f98  00000000  00000000  001b91e0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 19 .debug_macro  000168b6  00000000  00000000  001cf178  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 20 .debug_line   00066d55  00000000  00000000  001e5a2e  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 21 .debug_str    000f6eea  00000000  00000000  0024c783  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 22 .comment      00000079  00000000  00000000  0034366d  2**0
+                  CONTENTS, READONLY
+ 23 .debug_frame  0000b3ac  00000000  00000000  003436e8  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 24 .stab         0000003c  00000000  00000000  0034ea94  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 25 .stabstr      00000076  00000000  00000000  0034ead0  2**0
+                  CONTENTS, READONLY, DEBUGGING
