@@ -11,6 +11,57 @@
 #define EXTERN
 #include "header.h"
 
+/* paste sbc file contents */
+/*char *sbc_contents[] = {"fingerprint 36",
+"funcLength 1",
+"callentry 0",
+"sendentry 0",
+"numberOfLocals 0",
+"numberOfInstructions 13",
+"numberOfConstants 2",
+"setfl 8",
+"fixnum 1 100",
+"string 2 #0=\"x\"",
+"setglobal 2 1",
+"string 1 #1=\"print\"",
+"getglobal 1 1",
+"getglobal 2 2",
+"move 8 2",
+"call 1 1",
+"setfl 8",
+"geta 1",
+"seta 1",
+"ret"};
+
+/* paste obc file contents */
+// x = 100; print(x)
+/*const char *obc_contents[] __attribute__ ((section (".rodata"))) = {0xec ,0x24 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x11 ,0x00 ,0x02 ,0x24 ,0x01
+,0x00 ,0x00 ,0x20 ,0x0d ,0x00 ,0x00 ,0x01 ,0x02 ,0x00 ,0x09 ,0x01 ,0x02 ,0x00 ,0x09 ,0x00 ,0x02
+,0x00 ,0x64 ,0x02 ,0x03 ,0x00 ,0x00 ,0x18 ,0x03 ,0x02 ,0x00 ,0x02 ,0x06 ,0x00 ,0x01 ,0x17 ,0x05
+,0x06 ,0x00 ,0x02 ,0x07 ,0x00 ,0x00 ,0x17 ,0x04 ,0x07 ,0x00 ,0x1a ,0x0d ,0x04 ,0x00 ,0x33 ,0x05
+,0x01 ,0x00 ,0x20 ,0x0d ,0x00 ,0x00 ,0x22 ,0x02 ,0x00 ,0x00 ,0x21 ,0x02 ,0x00 ,0x00 ,0x27 ,0x00
+,0x00 ,0x00 ,0x00 ,0x02 ,0x78 ,0x00 ,0x00 ,0x06 ,0x70 ,0x72 ,0x69 ,0x6e ,0x74 ,0x00};*/
+
+// print("test")
+const char *obc_contents[] __attribute__ ((section (".rodata"))) = {0xec ,0x24 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x0d ,0x00 ,0x02 ,0x24 ,0x01
+,0x00 ,0x00 ,0x20 ,0x0b ,0x00 ,0x00 ,0x01 ,0x02 ,0x00 ,0x09 ,0x01 ,0x02 ,0x00 ,0x09 ,0x02 ,0x05
+,0x00 ,0x00 ,0x17 ,0x04 ,0x05 ,0x00 ,0x02 ,0x03 ,0x00 ,0x01 ,0x1a ,0x0b ,0x03 ,0x00 ,0x33 ,0x04
+,0x01 ,0x00 ,0x20 ,0x0b ,0x00 ,0x00 ,0x22 ,0x02 ,0x00 ,0x00 ,0x21 ,0x02 ,0x00 ,0x00 ,0x27 ,0x00
+,0x00 ,0x00 ,0x00 ,0x06 ,0x70 ,0x72 ,0x69 ,0x6e ,0x74 ,0x00 ,0x00 ,0x05 ,0x74 ,0x65 ,0x73 ,0x74
+,0x00};
+
+//not attribute ;
+/*const char *obc_contents[] = {0xec ,0x24 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x0d ,0x00 ,0x02 ,0x24 ,0x01
+,0x00 ,0x00 ,0x20 ,0x0b ,0x00 ,0x00 ,0x01 ,0x02 ,0x00 ,0x09 ,0x01 ,0x02 ,0x00 ,0x09 ,0x02 ,0x05
+,0x00 ,0x00 ,0x17 ,0x04 ,0x05 ,0x00 ,0x02 ,0x03 ,0x00 ,0x01 ,0x1a ,0x0b ,0x03 ,0x00 ,0x33 ,0x04
+,0x01 ,0x00 ,0x20 ,0x0b ,0x00 ,0x00 ,0x22 ,0x02 ,0x00 ,0x00 ,0x21 ,0x02 ,0x00 ,0x00 ,0x27 ,0x00
+,0x00 ,0x00 ,0x00 ,0x06 ,0x70 ,0x72 ,0x69 ,0x6e ,0x74 ,0x00 ,0x00 ,0x05 ,0x74 ,0x65 ,0x73 ,0x74
+,0x00};*/
+
+extern short __HeapBase;
+extern short __jsheap_start;
+
+
 /*
  *  phase
  */
@@ -56,14 +107,11 @@ FILE *prof_stream;
  * parameter
  */
 int regstack_limit = STACK_LIMIT; /* size of register stack in # of JSValues */
-//#ifdef JS_SPACE_BYTES
-//int heap_limit = JS_SPACE_BYTES; /* heap size in bytes */
-//#else /* JS_SPACE_BYTES */
-//int heap_limit = 1 * 1024 * 1024;
-//#endif /* JS_SPACE_BYTES */
-
-//int heap_limit = 143341; // 100 * 1024だとinit_global_constantsがいけた
-int heap_limit = 143341;
+#ifdef JS_SPACE_BYTES
+int heap_limit = JS_SPACE_BYTES; /* heap size in bytes */
+#else /* JS_SPACE_BYTES */
+int heap_limit = 1 * 1024 * 1024;
+#endif /* JS_SPACE_BYTES */
 
 #ifdef CALC_CALL
 static uint64_t callcount = 0;
@@ -142,7 +190,7 @@ int process_options(int ac, char *av[]) {
 }
 
 void print_cputime(time_t sec, suseconds_t usec) {
-  printf("total CPU time = %lld.%d msec, total GC time =  %d.%d msec (#GC = %d)\n",
+  printf("total CPU time = %ld.%03d msec, total GC time =  %d.%03d msec (#GC = %d)\n",
          sec * 1000 + usec / 1000, (int)(usec % 1000),
          gc_sec * 1000 + gc_usec / 1000, gc_usec % 1000, generation - 1);
 }
@@ -253,9 +301,8 @@ int file_type(char *name) {
  * main function
  */
 int main(int argc, char *argv[]) {
-  printf("main funciton start\r\n");
   /* If input program is given from a file, fp is set to NULL. */
-  FILE *fp = NULL;
+  //FILE *fp = NULL;
   struct rusage ru0, ru1;
   int base_function = 0;
   int k, iter, nf;
@@ -322,53 +369,56 @@ int main(int argc, char *argv[]) {
 #ifdef USE_BOEHMGC
   GC_INIT();
 #endif
-  init_memory(heap_limit);
-  printf("init_memory ok\n\r");
-  init_string_table(STRING_TABLE_SIZE);
-  printf("init_string_table ok\n\r");
-  init_context(regstack_limit, &context);
-  printf("init_context ok\n\r");
-  init_global_constants();
-  printf("init_global_constants ok\n\r");
-  //init_meta_objects(context);
-  printf("init_meta_objects ok\n\r");
-  //init_global_objects(context);
-  printf("init_global_objects ok\n\r");
-  //reset_context(context, function_table);
-  printf("init_context ok\n\r");
-  context->global = gconsts.g_global;
 
-  printf("init ok\r\n");
+  char *heap_start = (char*)&__HeapBase;
+  char *jsheap_start = (char *)&__jsheap_start;
+
+  printf("__HeapBase: 0x%x\n\r", heap_start);
+  printf("__jsheap_start: 0x%x\n\r", jsheap_start);
+  return 0;
+
+  init_memory(heap_limit);
+  init_string_table(STRING_TABLE_SIZE);
+  init_context(regstack_limit, &context);
+  init_global_constants();
+  init_meta_objects(context);
+  init_global_objects(context);
+  reset_context(context, function_table);
+  context->global = gconsts.g_global;
+  printf("init ok\n\r");
+
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
 #endif /* NO_SRAND */
 
-  for (; k < iter; k++) {
+  //for (; k <= iter; k++) {
 #if defined(USE_OBC) && defined(USE_SBC)
     obcsbc = FILE_OBC;
+    //obcsbc = FILE_SBC;
 #endif
-    if (k >= argc)
-      fp = stdin;   /* stdin always use OBC */
-    else {
+    //if (k >= argc)
+     // fp = stdin;   /* stdin always use OBC */
+    /*else {
       if ((fp = fopen(argv[k], "r")) == NULL)
         LOG_EXIT("%s: No such file.\n", argv[k]);
 #if defined(USE_OBC) && defined(USE_SBC)
       obcsbc = file_type(argv[k]);
 #endif
-    }
-    init_code_loader(fp);
-    printf("init_code_loader ok\r\n");
+    }*/
+    /*init_code_loader(fp);
     base_function = n;
     nf = code_loader(context, function_table, n);
-    end_code_loader();
-    printf("end_code_loader ok\r\n");
+    end_code_loader();*/
+    base_function = n;
+    //nf = code_loader(context, function_table, n, sbc_contents); // sbc file
+    nf = code_loader(context, function_table, n, obc_contents); // obc file
     if (nf > 0) n += nf;
-    else if (fp != stdin) {
-        LOG_ERR("code_loader returns %d\n", nf);
-        continue;
-    } else
+    //else if (fp != stdin) {
+     //   LOG_ERR("code_loader returns %d\n", nf);
+    //    continue;
+    //} else
       /* stdin is closed possibly by pressing ctrl-D */
-      break;
+    //  break;
 
     /* obtains the time before execution */
 #ifdef USE_PAPI
@@ -466,7 +516,7 @@ int main(int argc, char *argv[]) {
       printf("\xff");
       fflush(stdout);
     }
-  }
+  //}
 #ifdef HC_PROF
   if (hcprint_flag == TRUE)
     hcprof_print_all_hidden_class();
