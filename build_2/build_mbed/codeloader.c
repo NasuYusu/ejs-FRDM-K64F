@@ -137,15 +137,15 @@ typedef struct {
 #define LOADBUFLEN 1024
 
 #ifdef USE_SBC
-extern int insn_load_sbc(Context *, Instruction *, int, int, int, int, char **);
+extern int insn_load_sbc(Context *, Instruction *, int, int, int, int, const char *);
 #endif
 
 #ifdef USE_OBC
 extern void init_constant_info(CItable *citable, int nconsts, int i);
 extern void add_constant_info(CItable *ci, Opcode oc, unsigned int index,
                               InsnOperandType type);
-extern void const_load(Context *, int, JSValue *, CItable *, char **);
-extern int insn_load_obc(Context *, Instruction *, int, int, CItable *, int, char **);
+extern void const_load(Context *, int, JSValue *, CItable *, const char *);
+extern int insn_load_obc(Context *, Instruction *, int, int, CItable *, int, const char *);
 #endif
 
 extern uint32_t decode_escape_char(char *);
@@ -159,7 +159,7 @@ FILE *file_pointer;
 int ary_idx = 0;
 
 #ifdef USE_OBC
-inline int load_obc_file(unsigned char *buf, char **obc, int n) {
+inline int load_obc_file(unsigned char *buf, const char *obc, int n) {
   int i;
   if (sizeof(obc) < n) {
     printf("array not length\n\r");
@@ -179,7 +179,7 @@ inline int load_obc_file(unsigned char *buf, char **obc, int n) {
 /*inline char *step_load_code(char *buf, int buflen) {
   return fgets(buf, buflen, file_pointer == NULL? stdin: file_pointer);
 }*/
-inline char *step_load_code(char *buf, char **sbc) {
+inline char *step_load_code(char *buf, const char *sbc) {
   strcpy(buf, sbc[ary_idx++]);
   return buf;
 }
@@ -190,7 +190,7 @@ inline char *step_load_code(char *buf, char **sbc) {
 #define next_token()   strtok(NULL, DELIM)
 #define next_token2()  strtok(NULL, DELIM2)
 
-inline int check_read_token(char *buf, char *tok) {
+inline int check_read_token(char *buf, const char *tok) {
   char *p;
   p = first_token(buf);
   if (strcmp(p, tok) != 0)
@@ -202,7 +202,7 @@ inline int check_read_token(char *buf, char *tok) {
 /*
  * codeloader
  */
-int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **ary) {
+int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, const char *ary) {
   Instruction *insns;
   JSValue *consttop;
   int nfuncs, callentry, sendentry, nlocals, ninsns, nconsts;
@@ -387,7 +387,7 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **ary) {
 }
 
 #ifdef USE_OBC
-JSValue string_load(Context *ctx, int size, char **obc_s) {
+JSValue string_load(Context *ctx, int size, const char *obc_s) {
   char *str;
   JSValue v;
   int i;
@@ -404,7 +404,7 @@ JSValue string_load(Context *ctx, int size, char **obc_s) {
   return v;
 }
 
-JSValue double_load(Context *ctx, char **obc_d) {
+JSValue double_load(Context *ctx, const char *obc_d) {
   union {
     double d;
     unsigned char b[8];
@@ -430,7 +430,7 @@ JSValue double_load(Context *ctx, char **obc_d) {
   return double_to_number(ctx, u.d);
 }
 
-void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable, char **obc) {
+void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable, const char *obc) {
   int i;
   unsigned char b[2];
 
@@ -697,7 +697,7 @@ int load_regexp_sbc(Context *ctx, char *src, JSValue *ctop,
 #endif /* USE_REGEXP */
 
 int insn_load_sbc(Context *ctx, Instruction *insns, int ninsns,
-                  int nconsts, int pc, int ftbase, char **sbc) {
+                  int nconsts, int pc, int ftbase, const char *sbc) {
   char buf[LOADBUFLEN];
   char *tokp;
   Opcode oc;
@@ -920,7 +920,7 @@ int insn_load_sbc(Context *ctx, Instruction *insns, int ninsns,
 
 #ifdef USE_OBC
 int insn_load_obc(Context *ctx, Instruction *insns, int ninsns, int pc,
-                  CItable *citable, int ftbase, char **obc) {
+                  CItable *citable, int ftbase, const char *obc) {
   unsigned char buf[sizeof(Bytecode)];
   Opcode oc;
   Bytecode bc;
