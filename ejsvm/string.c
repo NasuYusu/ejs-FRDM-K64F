@@ -92,6 +92,7 @@ void init_string_table(unsigned int size) {
   StrCons **a;
 
   a = (StrCons **)malloc(sizeof(StrCons*) * size);
+  //printf("init_string_table: size %d, addr %d\n\r", (sizeof(StrCons*) * size), (short)a);
   memset(a, 0, sizeof(StrCons*) * size);
   string_table.obvector = a;
   string_table.size = size;

@@ -323,3 +323,9 @@ STATIC void print_memory_status(void)
 /* c-basic-offset: 2     */
 /* indent-tabs-mode: nil */
 /* End:                  */
+
+int	getrusage (int a, struct rusage* p) {
+  p->ru_utime.tv_sec = 0;
+  p->ru_utime.tv_usec = 0;
+  return 0;
+}

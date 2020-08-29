@@ -306,10 +306,16 @@ endif
 CHECKFILES_DIR = checkfiles
 GCCHECK_PATTERN = $(EJSVM_DIR)/gccheck.cocci
 
-all: ejsvm ejsc.jar ejsi ejs_cflags.txt ejs_ofiles.txt ejs_hfiles.txt ejs_insns.txt
+all: ejsvm ejsc.jar ejsi ejs_cflags.txt ejs_cxxflags.txt ejs_cxxfiles.txt ejs_ofiles.txt ejs_hfiles.txt ejs_insns.txt
 
 ejs_cflags.txt:
-	echo $(filter-out -std=gnu89,$(CFLAGS)) > ejs_cflags.txt
+	echo $(CPPFLAGS) $(filter-out -std=gnu89,$(CFLAGS)) > ejs_cflags.txt
+
+ejs_cxxflags.txt:
+	echo $(CPPFLAGS) $(CXXFLAGS) > ejs_cxxflags.txt
+
+ejs_cxxfiles.txt:
+	echo $(CXX_FILES) > ejs_cxxfiles.txt
 
 ejs_ofiles.txt:
 	echo $(OFILES) > ejs_ofiles.txt
