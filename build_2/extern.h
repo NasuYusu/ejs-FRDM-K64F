@@ -7,6 +7,10 @@
  * Electro-communications.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ftable_flag;
 extern int trace_flag;
 extern int lastprint_flag;
@@ -43,10 +47,6 @@ extern int numinsts;
 extern int n_hc;
 extern int n_enter_hc;
 extern int n_exit_hc;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
  * allocate.c
@@ -145,7 +145,7 @@ extern JSValue invoke_builtin(Context *, JSValue, JSValue, int, JSValue, int);
 extern char *insn_nemonic(int);
 extern void init_code_loader(FILE *);
 extern void end_code_loader(void);
-extern int code_loader(Context *, FunctionTable *, int, char **);
+extern int code_loader(Context *, FunctionTable *, int, const char *);
 extern JSValue specstr_to_jsvalue(const char *);
 
 /*

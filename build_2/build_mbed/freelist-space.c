@@ -22,6 +22,9 @@
  */
 #define MINIMUM_FREE_CHUNK_GRANULES 4
 
+extern uintptr_t __jsheap_start;
+extern uintptr_t __jsheap_end;
+
 /*
  * Variables
  */
@@ -34,7 +37,8 @@ STATIC struct space debug_js_shadow;
  * prototype
  */
 /* space */
-STATIC void create_space(struct space *space, size_t bytes, char* name);
+//STATIC void create_space(struct space *space, size_t bytes, char* name);
+STATIC void create_space(struct space *space, char* name);
 #ifdef GC_DEBUG
 STATIC header_t *get_shadow(void *ptr);
 #endif /* GC_DEBUG */
@@ -62,13 +66,26 @@ STATIC_INLINE size_t get_payload_granules(header_t *hdrp)
 /*
  *  Space
  */
-STATIC void create_space(struct space *space, size_t bytes, char *name)
+//STATIC void create_space(struct space *space, size_t bytes, char *name)
+STATIC void create_space(struct space *space, char *name)
 {
-  uintptr_t addr;
+  //uintptr_t addr;
   struct free_chunk *p;
-  addr = (uintptr_t) malloc(bytes + BYTES_IN_GRANULE - 1);
+  size_t bytes;
+  /*addr = (uintptr_t) malloc(bytes + BYTES_IN_GRANULE - 1);
   p = (struct free_chunk *)
     ((addr + BYTES_IN_GRANULE - 1) & ~(BYTES_IN_GRANULE - 1));
+  printf("addr : 0x%x\n\r", addr);
+  printf("bytes 0x%x\n\r", bytes);*/
+
+  p = (struct free_chunk *)
+    (((uintptr_t)&__jsheap_start + BYTES_IN_GRANULE - 1) & ~(BYTES_IN_GRANULE - 1));
+  bytes = ((uintptr_t) &__jsheap_end - (uintptr_t)p);
+  printf("__jsheap_start : 0x%x\n\r", (uintptr_t) &__jsheap_start);
+  printf("p :0x%x\n\r", (uintptr_t)p);
+  printf("bytes : 0x%x\n\r", bytes);
+
+
   p->header = compose_header(bytes >> LOG_BYTES_IN_GRANULE, 0, CELLT_FREE);
   p->next = NULL;
   space->addr = (uintptr_t) p;
@@ -155,9 +172,11 @@ STATIC_INLINE void* js_space_alloc(struct space *space,
 
 void space_init(size_t bytes)
 {
-  create_space(&js_space, bytes, "js_space");
+  //create_space(&js_space, bytes, "js_space");
+  create_space(&js_space, "js_space");
 #ifdef GC_DEBUG
-  create_space(&debug_js_shadow, bytes, "debug_js_shadow");
+  //create_space(&debug_js_shadow, bytes, "debug_js_shadow");
+  create_space(&debug_js_shadow, "debug_js_shadow");
 #endif /* GC_DEBUG */
 }
 
@@ -323,9 +342,6 @@ STATIC void check_invariant_nobw_space(struct space *space)
     case CELLT_STRING:
     case CELLT_FLONUM:
     case CELLT_ARRAY_DATA:
-    case CELLT_CONTEXT:
-    case CELLT_STACK:
-    case CELLT_HIDDEN_CLASS:
     case CELLT_HASHTABLE:
     case CELLT_HASH_CELL:
       break;

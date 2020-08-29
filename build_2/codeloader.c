@@ -137,15 +137,15 @@ typedef struct {
 #define LOADBUFLEN 1024
 
 #ifdef USE_SBC
-extern int insn_load_sbc(Context *, Instruction *, int, int, int, int, char **);
+extern int insn_load_sbc(Context *, Instruction *, int, int, int, int, const char *);
 #endif
 
 #ifdef USE_OBC
 extern void init_constant_info(CItable *citable, int nconsts, int i);
 extern void add_constant_info(CItable *ci, Opcode oc, unsigned int index,
                               InsnOperandType type);
-extern void const_load(Context *, int, JSValue *, CItable *);
-extern int insn_load_obc(Context *, Instruction *, int, int, CItable *, int);
+extern void const_load(Context *, int, JSValue *, CItable *, const char *);
+extern int insn_load_obc(Context *, Instruction *, int, int, CItable *, int, const char *);
 #endif
 
 extern uint32_t decode_escape_char(char *);
@@ -156,7 +156,17 @@ extern void set_function_table(FunctionTable *, int, Instruction *,
                                int, int, int, int, int);
 
 FILE *file_pointer;
-int sbc_idx = 0;
+int ary_idx = 0;
+
+#ifdef USE_OBC
+inline int step_array_index(char *buf, const char *obc, int n) {
+int i;
+  for (i = 0; i < n; i++, ary_idx++) {
+    buf[i] = obc[ary_idx];
+  }
+  return n;
+}
+#endif
 
 #ifdef USE_SBC
 /*
@@ -165,9 +175,8 @@ int sbc_idx = 0;
 /*inline char *step_load_code(char *buf, int buflen) {
   return fgets(buf, buflen, file_pointer == NULL? stdin: file_pointer);
 }*/
-inline char *step_load_code(char *buf, char **sbcpt) {
-  strcpy(buf, sbcpt[sbc_idx++]);
-  //printf("string[%d]: %s\n", sbc_idx - 1, buf);
+inline char *step_load_code(char *buf, const char *sbc) {
+  strcpy(buf, sbc[ary_idx++]);
   return buf;
 }
 
@@ -189,7 +198,7 @@ inline int check_read_token(char *buf, char *tok) {
 /*
  * codeloader
  */
-int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **sbcptr) {
+int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, const char *ary) {
   Instruction *insns;
   JSValue *consttop;
   int nfuncs, callentry, sendentry, nlocals, ninsns, nconsts;
@@ -204,12 +213,14 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **sbcptr) 
 
 #ifdef USE_SBC
 //#define next_buf_sbc() (step_load_code(buf, LOADBUFLEN) != NULL)
-#define next_buf_sbc() (step_load_code(buf, sbcptr) != NULL)
+#define next_buf_sbc() (step_load_code(buf, ary) != NULL)
 #define buf_to_int_sbc(s)   check_read_token(buf, s)
 #endif
 
 #ifdef USE_OBC
-#define next_buf_obc() (fread(b, sizeof(unsigned char), 2, file_pointer) > 0)
+// #define next_buf_obc() (fread(b, sizeof(unsigned char), 2, file_pointer) > 0)
+//#define next_buf_obc() (b[0] = ary[ary_idx++], b[1] = ary[ary_idx++], 2)
+#define next_buf_obc() (step_array_index(b, ary, 2) > 0)
 #ifdef CPU_LITTLE_ENDIAN
 #define buf_to_int_obc(s)   (b[0] * 256 + b[1])
 #else
@@ -329,14 +340,14 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **sbcptr) 
     for (j = 0; j < ninsns; j++) {
 #if defined(USE_OBC) && defined(USE_SBC)
       ret = (obcsbc == FILE_OBC?
-             insn_load_obc(ctx, insns, ninsns, j, &citable, ftbase):
-             insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase, sbcptr));
+             insn_load_obc(ctx, insns, ninsns, j, &citable, ftbase, ary):
+             insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase, ary));
 #else
 #ifdef USE_OBC
-      ret = insn_load_obc(ctx, insns, ninsns, j, &citable, ftbase);
+      ret = insn_load_obc(ctx, insns, ninsns, j, &citable, ftbase, ary);
 #endif
 #ifdef USE_SBC
-      ret = insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase, sbcptr);
+      ret = insn_load_sbc(ctx, insns, ninsns, nconsts, j, ftbase, ary);
 #endif
 #endif
       if (ret == LOAD_FAIL)
@@ -345,10 +356,10 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **sbcptr) 
 
 #if defined(USE_OBC) && defined(USE_SBC)
     if (obcsbc == FILE_OBC)
-      const_load(ctx, nconsts, consttop, &citable);
+      const_load(ctx, nconsts, consttop, &citable, ary);
 #else
 #ifdef USE_OBC
-    const_load(ctx, nconsts, consttop, &citable);
+    const_load(ctx, nconsts, consttop, &citable, ary);
 #endif
 #endif
 
@@ -372,26 +383,35 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **sbcptr) 
 }
 
 #ifdef USE_OBC
-JSValue string_load(Context *ctx, int size) {
+JSValue string_load(Context *ctx, int size, const char *obc_s) {
   char *str;
   JSValue v;
+  int i;
 
   str = (char*) malloc(sizeof(char) * size);
-  if (fread(str, sizeof(char), size, file_pointer) < size)
-    LOG_ERR("string literal too short.");
+  /*if (fread(str, sizeof(char), size, file_pointer) < size)
+    LOG_ERR("string literal too short.");*/
+    for (i = 0; i < size; i++, ary_idx++) {
+		  str[i] = obc_s[ary_idx];
+	}
   decode_escape_char(str);
   v = cstr_to_string(NULL, str);
   free(str);
   return v;
 }
 
-JSValue double_load(Context *ctx) {
+JSValue double_load(Context *ctx, const char *obc_d) {
   union {
     double d;
     unsigned char b[8];
   } u;
+   int i;
+
+  for (i = 0; i < 8; i++, ary_idx++) {
+	  u.b[i] = obc_d[ary_idx];
+  }
   
-  fread(&u.b, sizeof(unsigned char), 8, file_pointer);
+  //fread(&u.b, sizeof(unsigned char), 8, file_pointer);
 
 #ifdef CPU_LITTLE_ENDIAN
   {
@@ -406,11 +426,12 @@ JSValue double_load(Context *ctx) {
   return double_to_number(ctx, u.d);
 }
 
-void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable) {
+void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable, const char *obc) {
   int i;
   unsigned char b[2];
 
-#define next_buf()      fread(b, sizeof(unsigned char), 2, file_pointer)
+//#define next_buf()      fread(b, sizeof(unsigned char), 2, file_pointer)
+#define next_buf() (step_array_index(b, obc, 2))
 #define buf_to_int(s)   (b[0] * 256 + b[1])
   
   for (i = 0; i < nconsts; i++) {
@@ -426,10 +447,10 @@ void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable) {
         switch (oc) {
         case ERROR:
         case STRING:
-          v = string_load(ctx, size);
+          v = string_load(ctx, size, obc);
           break;
         case NUMBER:
-          v = double_load(ctx);
+          v = double_load(ctx, obc);
           break;
 #ifdef USE_REGEXP
         case REGEXP:
@@ -447,10 +468,10 @@ void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable) {
           InsnOperandType type = citable->const_info[i].type;
           switch (type) {
           case STR:
-            v = string_load(ctx, size);
+            v = string_load(ctx, size, obc);
             break;
           case NUM:
-            v = double_load(ctx);
+            v = double_load(ctx, obc);
             break;
           default:
             LOG_ERR("Error: unexpected operand type in loading constants");
@@ -672,14 +693,14 @@ int load_regexp_sbc(Context *ctx, char *src, JSValue *ctop,
 #endif /* USE_REGEXP */
 
 int insn_load_sbc(Context *ctx, Instruction *insns, int ninsns,
-                  int nconsts, int pc, int ftbase, char **sbcptr_s) {
+                  int nconsts, int pc, int ftbase, const char *sbc) {
   char buf[LOADBUFLEN];
   char *tokp;
   Opcode oc;
   JSValue *ctop;
 
   ctop = (JSValue *)(&insns[ninsns]);
-  step_load_code(buf, sbcptr_s);
+  step_load_code(buf, sbc);
   tokp = first_token(buf);
 #ifdef ALLOC_SITE_CACHE
   init_alloc_site(&insns[pc].alloc_site);
@@ -895,15 +916,19 @@ int insn_load_sbc(Context *ctx, Instruction *insns, int ninsns,
 
 #ifdef USE_OBC
 int insn_load_obc(Context *ctx, Instruction *insns, int ninsns, int pc,
-                  CItable *citable, int ftbase) {
+                  CItable *citable, int ftbase, const char *obc) {
   unsigned char buf[sizeof(Bytecode)];
   Opcode oc;
   Bytecode bc;
   int i;
 
-  if (fread(buf, sizeof(unsigned char), sizeof(Bytecode), file_pointer)
+  /*if (fread(buf, sizeof(unsigned char), sizeof(Bytecode), file_pointer)
       != sizeof(Bytecode))
-    LOG_ERR("Error: cannot read %dth bytecode", pc);
+    LOG_ERR("Error: cannot read %dth bytecode", pc);*/
+    for (i = 0; i < sizeof(Bytecode); i++) {
+		  buf[i] = obc[ary_idx];
+		  ary_idx++;
+	  }
   bc = convertToBc(buf);
   oc = get_opcode(bc);
 #ifdef ALLOC_SITE_CACHE
