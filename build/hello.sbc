@@ -1,0 +1,20 @@
+fingerprint 36
+funcLength 1
+callentry 0
+sendentry 1
+numberOfLocals 0
+numberOfInstructions 13
+numberOfConstants 2
+getglobalobj 1
+setfl 11
+specconst 2 undefined
+specconst 2 undefined
+string 5 #0="print"
+getglobal 4 5
+string 3 #1="hello"
+move 11 3
+call 4 1
+setfl 11
+geta 2
+seta 2
+ret
