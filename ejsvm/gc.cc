@@ -161,7 +161,7 @@ void* gc_malloc(Context *ctx, uintptr_t request_bytes, cell_type_t type)
       addr = space_alloc(request_bytes, type);
     }
     if (addr == NULL) {
-      printf("Out of memory\n");
+      printf("Out of memory : gc_malloc\n");
 #ifdef GC_DEBUG
       printf("#GC = %d\n", generation);
       space_print_memory_status();
@@ -318,14 +318,17 @@ STATIC void print_memory_status(void)
 }
 #endif /* GC_DEBUG */
 
+#ifdef MBED
+int	getrusage (int a, struct rusage* p) {
+  p->ru_utime.tv_sec = 0;
+  p->ru_utime.tv_usec = 0;
+  return 0;
+}
+#endif /* MBED */
+
 /* Local Variables:      */
 /* mode: c               */
 /* c-basic-offset: 2     */
 /* indent-tabs-mode: nil */
 /* End:                  */
 
-int	getrusage (int a, struct rusage* p) {
-  p->ru_utime.tv_sec = 0;
-  p->ru_utime.tv_usec = 0;
-  return 0;
-}

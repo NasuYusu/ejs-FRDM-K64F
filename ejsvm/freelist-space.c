@@ -34,8 +34,11 @@ STATIC struct space debug_js_shadow;
  * prototype
  */
 /* space */
-//STATIC void create_space(struct space *space, size_t bytes, char* name);
+#ifdef MBED
 STATIC void create_space(struct space *space, char* name);
+#else
+STATIC void create_space(struct space *space, size_t bytes, char* name);
+#endif /* MBED */
 #ifdef GC_DEBUG
 STATIC header_t *get_shadow(void *ptr);
 #endif /* GC_DEBUG */
@@ -48,8 +51,10 @@ STATIC void check_invariant(void);
 STATIC void print_memory_status(void);
 #endif /* GC_DEBUG */
 
+#ifdef MBED
 extern uintptr_t __jsheap_start;
 extern uintptr_t __jsheap_end;
+#endif /* MBED */
 
 
 /*
@@ -66,17 +71,11 @@ STATIC_INLINE size_t get_payload_granules(header_t *hdrp)
 /*
  *  Space
  */
-//STATIC void create_space(struct space *space, size_t bytes, char *name)
+#ifdef MBED
 STATIC void create_space(struct space *space, char *name)
 {
-  //uintptr_t addr;
   struct free_chunk *p;
   size_t bytes;
-  /*addr = (uintptr_t) malloc(bytes + BYTES_IN_GRANULE - 1);
-  p = (struct free_chunk *)
-    ((addr + BYTES_IN_GRANULE - 1) & ~(BYTES_IN_GRANULE - 1));
-  printf("addr : 0x%x\n\r", addr);
-  printf("bytes 0x%x\n\r", bytes);*/
 
   p = (struct free_chunk *)
     (((uintptr_t)&__jsheap_start + BYTES_IN_GRANULE - 1) & ~(BYTES_IN_GRANULE - 1));
@@ -94,6 +93,26 @@ STATIC void create_space(struct space *space, char *name)
   space->freelist = p;
   space->name = name;
 }
+#else
+STATIC void create_space(struct space *space, size_t bytes, char *name)
+{
+  uintptr_t addr;
+  struct free_chunk *p;
+  addr = (uintptr_t) malloc(bytes + BYTES_IN_GRANULE - 1);
+  p = (struct free_chunk *)
+    ((addr + BYTES_IN_GRANULE - 1) & ~(BYTES_IN_GRANULE - 1));
+  printf("addr : 0x%x\n\r", addr);
+  printf("bytes 0x%x\n\r", bytes);
+
+  p->header = compose_header(bytes >> LOG_BYTES_IN_GRANULE, 0, CELLT_FREE);
+  p->next = NULL;
+  space->addr = (uintptr_t) p;
+  space->bytes = bytes;
+  space->free_bytes = bytes;
+  space->freelist = p;
+  space->name = name;
+}
+#endif /* MBED */
 
 #ifdef GC_DEBUG
 header_t *get_shadow(void *ptr)
@@ -172,11 +191,17 @@ STATIC_INLINE void* js_space_alloc(struct space *space,
 
 void space_init(size_t bytes)
 {
-  //create_space(&js_space, bytes, "js_space");
+  #ifdef MBED
   create_space(&js_space, "js_space");
+  #else
+  create_space(&js_space, bytes, "js_space");
+  #endif /* MBED */
 #ifdef GC_DEBUG
-  //create_space(&debug_js_shadow, bytes, "debug_js_shadow");
+  #ifdef MBED
   create_space(&debug_js_shadow, "debug_js_shadow");
+  #else
+  create_space(&debug_js_shadow, bytes, "debug_js_shadow");
+  #endif /* MBED */
 #endif /* GC_DEBUG */
 }
 

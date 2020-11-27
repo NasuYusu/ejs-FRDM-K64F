@@ -86,9 +86,7 @@ void init_context(size_t stack_limit, Context **context)
 static Context *allocate_context(size_t stack_size)
 {
   Context *ctx = (Context *) malloc(sizeof(Context));
-  //printf("allocate_context (Context): size %d, addr %d\n\r", sizeof(Context), ctx);
   ctx->stack = (JSValue *) malloc(sizeof(JSValue) * stack_size);
-  //printf("allocate_context (JSValue): size %d, addr %d\n\r", (sizeof(JSValue) * stack_size), ctx->stack);
   return ctx;
 }
 

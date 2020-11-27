@@ -11,39 +11,14 @@
 #define EXTERN
 #include "header.h"
 
-/* paste sbc file contents */
-char *sbc_contents[] = {"fingerprint 36",
-"funcLength 1",
-"callentry 0",
-"sendentry 0",
-"numberOfLocals 0",
-"numberOfInstructions 13",
-"numberOfConstants 2",
-"setfl 8",
-"fixnum 1 100",
-"string 2 #0=\"x\"",
-"setglobal 2 1",
-"string 1 #1=\"print\"",
-"getglobal 1 1",
-"getglobal 2 2",
-"move 8 2",
-"call 1 1",
-"setfl 8",
-"geta 1",
-"seta 1",
-"ret"};
+/* preload string object */
+#include "preload_global_strings.h"
+#include "preload_strings.h"
 
 /* paste obc file contents */
-// print("test")
-char *obc_contents[] = {0xec ,0x24 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x0d ,0x00 ,0x02 ,0x00 ,0x24
-,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x20 ,0x00 ,0x0b ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x01
-,0x00 ,0x02 ,0x00 ,0x00 ,0x00 ,0x16 ,0x00 ,0x01 ,0x00 ,0x02 ,0x00 ,0x00 ,0x00 ,0x16 ,0x00 ,0x02
-,0x00 ,0x05 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x17 ,0x00 ,0x04 ,0x00 ,0x05 ,0x00 ,0x00 ,0x00 ,0x02
-,0x00 ,0x03 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x1a ,0x00 ,0x0b ,0x00 ,0x03 ,0x00 ,0x00 ,0x00 ,0x33
-,0x00 ,0x04 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x20 ,0x00 ,0x0b ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x22
-,0x00 ,0x02 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x21 ,0x00 ,0x02 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x27
-,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x06 ,0x70 ,0x72 ,0x69 ,0x6e ,0x74 ,0x00 ,0x00 ,0x05
-,0x74 ,0x65 ,0x73 ,0x74 ,0x00};
+char *obc_contents[] = {
+  #include "obc_contents.h"
+};
 
 /*
  *  phase
@@ -288,9 +263,12 @@ int main(int argc, char *argv[]) {
   //FILE *fp = NULL;
   struct rusage ru0, ru1;
   int base_function = 0;
-  int k, iter, nf;
+  int k, iter, nf, i, index, b;
   int n = 0;
   Context *context;
+  StringCell *sp;
+  StrCons *sc, *c;
+  JSValue v;
 
 #ifdef CALC_TIME
   long long s, e;
@@ -355,12 +333,56 @@ int main(int argc, char *argv[]) {
   init_memory(heap_limit);
   init_string_table(STRING_TABLE_SIZE);
   init_context(regstack_limit, &context);
+  /* put String table */
+ for (i = 0; i < sizeof(preload_global_strings)/sizeof(preload_global_strings[0]); i++) {
+    b = 0;
+    sp = (StringCell *)header_to_payload((header_t *)preload_global_strings[i]);
+        //printf("%i: (%s, %p, %p)\n\r", i, sp->value, &(sp->value), preload_global_strings[i]);
+    v = ptr_to_normal_string(sp);
+    index = (sp->hash) % string_table.size;
+    for (c = string_table.obvector[index]; c != NULL; c = c->next) {
+      if (memcmp(string_value(c->str), string_value(v), sp->length) == 0 &&
+          memcmp("", string_value(v) + (sp->length), 0 + 1) == 0) {
+              b = 1;
+              break;
+            }
+    }
+    if (!b) {
+      assert(is_string(v));
+      sc = (StrCons*) gc_malloc(context, sizeof(StrCons), CELLT_STR_CONS);
+      sc->str = v;
+      sc->next = string_table.obvector[index];
+      string_table.obvector[index] = sc;
+    }
+  }
   init_global_constants();
   init_meta_objects(context);
   init_global_objects(context);
   reset_context(context, function_table);
   context->global = gconsts.g_global;
   printf("init ok\n\r");
+
+  /* put string object in proguram code */
+  for (i = 0; i < sizeof(preload_strings)/sizeof(preload_strings[0]); i++) {
+    b = 0;
+    sp = (StringCell *)header_to_payload((header_t *)preload_strings[i]);
+    v = ptr_to_normal_string(sp);
+    index = (sp->hash) % string_table.size;
+    for (c = string_table.obvector[index]; c != NULL; c = c->next) {
+      if (memcmp(string_value(c->str), string_value(v), sp->length) == 0 &&
+          memcmp("", string_value(v) + (sp->length), 0 + 1) == 0) {
+              b = 1;
+              break;
+            }
+    }
+    if (!b) {
+      assert(is_string(v));
+      sc = (StrCons*) gc_malloc(context, sizeof(StrCons), CELLT_STR_CONS);
+      sc->str = v;
+      sc->next = string_table.obvector[index];
+      string_table.obvector[index] = sc;
+    }
+  }
 
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
@@ -591,11 +613,13 @@ void debug_print(Context *context, int n) {
   printf("\n");
 }
 
+#ifdef MBED
 int	getrusage (int a, struct rusage* p) {
   p->ru_utime.tv_sec = 0;
   p->ru_utime.tv_usec = 0;
   return 0;
 }
+#endif /* MBED */
 
 /* Local Variables:      */
 /* mode: c               */

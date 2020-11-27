@@ -39,11 +39,23 @@ GC_CXX = true
 USE_VMDL = false
 
 ##
+## MBED
+##
+#MBED = true
+MBED = false
+
+##
 ## commands
 ##
 
-CC = gcc
-CXX = gcc
+## Use Mbed
+ifeq ($(MBED), true)
+	CC = arm-none-eabi-gcc
+	CXX = arm-none-eabi-g++
+else
+	CC = gcc
+	CXX = gcc
+endif
 SED = gsed
 # SED = sed
 PYTHON = python
@@ -145,5 +157,10 @@ CPPFLAGS       += -DVERIFY_BIBOP
 
 ## fix rand seed
 CPPFLAGS    += -DNO_SRAND
+
+## Use Mbed
+ifeq ($(MBED), true)
+	CPPFLAGS 	+= -DMBED
+endif
 
 include $(EJSVM_DIR)/common.mk

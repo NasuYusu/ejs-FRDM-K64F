@@ -312,8 +312,10 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **ary) {
 
     insns = ((Instruction *)
              malloc(sizeof(Instruction) * ninsns + sizeof(JSValue) * nconsts));
-    if (insns == NULL)
+    if (insns == NULL) {
+      printf("Out of memory : instruction\n");
       LOG_EXIT("Allocating instruction array failed.");
+    }
     consttop = (JSValue *)(&insns[ninsns]);
     for (j = 0; j < nconsts; j++) consttop[j] = JS_UNDEFINED;
 
@@ -378,6 +380,9 @@ JSValue string_load(Context *ctx, int size, char **obc_s) {
   int i;
 
   str = (char*) malloc(sizeof(char) * size);
+  {
+    printf("Out of memory : string leteral\n");
+  }
   /*if (fread(str, sizeof(char), size, file_pointer) < size)
     LOG_ERR("string literal too short.");*/
     for (i = 0; i < size; i++, ary_idx++) {
@@ -1013,8 +1018,10 @@ void init_constant_info(CItable *citable, int nconsts, int i) {
   citable->n_consts = nconsts;
 #endif /* DEBUG */
   p = (ConstInfo*)malloc(sizeof(ConstInfo) * nconsts);
-  if (p == NULL)
+  if (p == NULL) {
+    printf("Out of memory : init_constant_info\n");
     LOG_EXIT("%dth func: cannot malloc constant_info", i);
+  }
   citable->const_info = p;
 }
 
