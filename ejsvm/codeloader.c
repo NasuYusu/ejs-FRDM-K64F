@@ -137,15 +137,15 @@ typedef struct {
 #define LOADBUFLEN 1024
 
 #ifdef USE_SBC
-extern int insn_load_sbc(Context *, Instruction *, int, int, int, int, char **);
+extern int insn_load_sbc(Context *, Instruction *, int, int, int, int, const char *);
 #endif
 
 #ifdef USE_OBC
 extern void init_constant_info(CItable *citable, int nconsts, int i);
 extern void add_constant_info(CItable *ci, Opcode oc, unsigned int index,
                               InsnOperandType type);
-extern void const_load(Context *, int, JSValue *, CItable *, char **);
-extern int insn_load_obc(Context *, Instruction *, int, int, CItable *, int, char **);
+extern void const_load(Context *, int, JSValue *, CItable *, const char *);
+extern int insn_load_obc(Context *, Instruction *, int, int, CItable *, int, const char *);
 #endif
 
 extern uint32_t decode_escape_char(char *);
@@ -158,6 +158,20 @@ extern void set_function_table(FunctionTable *, int, Instruction *,
 FILE *file_pointer;
 int ary_idx = 0;
 
+#ifdef USE_OBC
+inline int load_obc_file(unsigned char *buf, const char *obc, int n) {
+  int i;
+  if (sizeof(obc) < n) {
+    printf("array not length\n\r");
+    return -1;
+  }
+  for (i = 0; i < n; i++, ary_idx++) {
+    buf[i] = obc[ary_idx];
+  }
+  return n;
+}
+#endif
+
 #ifdef USE_SBC
 /*
  * reads the next line from the input stream
@@ -165,18 +179,18 @@ int ary_idx = 0;
 /*inline char *step_load_code(char *buf, int buflen) {
   return fgets(buf, buflen, file_pointer == NULL? stdin: file_pointer);
 }*/
-inline char *step_load_code(char *buf, char **sbc) {
-  strcpy(buf, sbc[ary_idx++]);
+inline char *step_load_code(char *buf, const char *sbc) {
+  strcpy(buf, &sbc[ary_idx++]);
   return buf;
 }
 
-#define DELIM " \n\r"
-#define DELIM2 "\n\r"
+#define DELIM " \n"
+#define DELIM2 "\n"
 #define first_token(b) strtok(b, DELIM)
 #define next_token()   strtok(NULL, DELIM)
 #define next_token2()  strtok(NULL, DELIM2)
 
-inline int check_read_token(char *buf, char *tok) {
+inline int check_read_token(char *buf, const char *tok) {
   char *p;
   p = first_token(buf);
   if (strcmp(p, tok) != 0)
@@ -188,11 +202,12 @@ inline int check_read_token(char *buf, char *tok) {
 /*
  * codeloader
  */
-int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **ary) {
+int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, const char *ary) {
   Instruction *insns;
   JSValue *consttop;
   int nfuncs, callentry, sendentry, nlocals, ninsns, nconsts;
   int i, j, ret;
+
 #ifdef USE_SBC
   char buf[LOADBUFLEN];
 #endif
@@ -209,7 +224,8 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **ary) {
 
 #ifdef USE_OBC
 // #define next_buf_obc() (fread(b, sizeof(unsigned char), 2, file_pointer) > 0)
-#define next_buf_obc() (b[0] = ary[ary_idx++], b[1] = ary[ary_idx++], 2)
+//#define next_buf_obc() (b[0] = ary[ary_idx++], b[1] = ary[ary_idx++], 2)
+#define next_buf_obc() (load_obc_file(b, ary, 2))
 #ifdef CPU_LITTLE_ENDIAN
 #define buf_to_int_obc(s)   (b[0] * 256 + b[1])
 #else
@@ -374,15 +390,14 @@ int code_loader(Context *ctx, FunctionTable *ftable, int ftbase, char **ary) {
 }
 
 #ifdef USE_OBC
-JSValue string_load(Context *ctx, int size, char **obc_s) {
+JSValue string_load(Context *ctx, int size, const char *obc_s) {
   char *str;
   JSValue v;
   int i;
 
   str = (char*) malloc(sizeof(char) * size);
-  {
-    printf("Out of memory : string leteral\n");
-  }
+  if (str == NULL) 
+    printf("Out of memory : string literal\n");
   /*if (fread(str, sizeof(char), size, file_pointer) < size)
     LOG_ERR("string literal too short.");*/
     for (i = 0; i < size; i++, ary_idx++) {
@@ -394,15 +409,15 @@ JSValue string_load(Context *ctx, int size, char **obc_s) {
   return v;
 }
 
-JSValue double_load(Context *ctx, char **obc_d) {
+JSValue double_load(Context *ctx, const char *obc_d) {
   union {
     double d;
     unsigned char b[8];
   } u;
    int i;
 
-  for (i = 0; i < 8; i++, ary_idx++) {
-	  u.b[i] = obc_d[ary_idx];
+  for (i = 0; i < 8; i++) {
+	  u.b[i] = obc_d[ary_idx++];
   }
   
   //fread(&u.b, sizeof(unsigned char), 8, file_pointer);
@@ -420,12 +435,12 @@ JSValue double_load(Context *ctx, char **obc_d) {
   return double_to_number(ctx, u.d);
 }
 
-void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable, char **obc) {
+void const_load(Context *ctx, int nconsts, JSValue *ctop, CItable *citable, const char *obc) {
   int i;
   unsigned char b[2];
 
 //#define next_buf()      fread(b, sizeof(unsigned char), 2, file_pointer)
-#define next_buf() (b[0] = obc[ary_idx++], b[1] = obc[ary_idx++], 2)
+#define next_buf() (load_obc_file(b, obc, 2))
 #define buf_to_int(s)   (b[0] * 256 + b[1])
   
   for (i = 0; i < nconsts; i++) {
@@ -521,7 +536,7 @@ Bytecode convertToBc(unsigned char buf[sizeof(Bytecode)]) {
   Bytecode ret;
 
   ret = 0;
-  for (i = 0; i < sizeof(Bytecode); i++)
+  for (i = 0; i < (sizeof(Bytecode)); i++)
     ret = ret * 256 + buf[i];
   return ret;
 } /* USE_OBC */
@@ -687,7 +702,7 @@ int load_regexp_sbc(Context *ctx, char *src, JSValue *ctop,
 #endif /* USE_REGEXP */
 
 int insn_load_sbc(Context *ctx, Instruction *insns, int ninsns,
-                  int nconsts, int pc, int ftbase, char **sbc) {
+                  int nconsts, int pc, int ftbase, const char *sbc) {
   char buf[LOADBUFLEN];
   char *tokp;
   Opcode oc;
@@ -910,7 +925,7 @@ int insn_load_sbc(Context *ctx, Instruction *insns, int ninsns,
 
 #ifdef USE_OBC
 int insn_load_obc(Context *ctx, Instruction *insns, int ninsns, int pc,
-                  CItable *citable, int ftbase, char **obc) {
+                  CItable *citable, int ftbase, const char *obc) {
   unsigned char buf[sizeof(Bytecode)];
   Opcode oc;
   Bytecode bc;
@@ -919,7 +934,7 @@ int insn_load_obc(Context *ctx, Instruction *insns, int ninsns, int pc,
   /*if (fread(buf, sizeof(unsigned char), sizeof(Bytecode), file_pointer)
       != sizeof(Bytecode))
     LOG_ERR("Error: cannot read %dth bytecode", pc);*/
-    for (i = 0; i < sizeof(Bytecode); i++, ary_idx++) {
+    for (i = 0; i < (sizeof(Bytecode)); i++, ary_idx++) {
 		  buf[i] = obc[ary_idx];
 	  }
   bc = convertToBc(buf);

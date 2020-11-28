@@ -16,7 +16,7 @@
 #include "preload_strings.h"
 
 /* paste obc file contents */
-char *obc_contents[] = {
+const char obc_contents[] = {
   #include "obc_contents.h"
 };
 
@@ -270,6 +270,8 @@ int main(int argc, char *argv[]) {
   StrCons *sc, *c;
   JSValue v;
 
+  printf("obc_contents addr = %p\n\r", obc_contents);
+
 #ifdef CALC_TIME
   long long s, e;
 #endif
@@ -410,6 +412,7 @@ int main(int argc, char *argv[]) {
     //nf = code_loader(context, function_table, n, sbc_contents); // sbc file
     nf = code_loader(context, function_table, n, obc_contents); // obc file
     if (nf > 0) n += nf;
+    printf("codeloader ok\n");
     //else if (fp != stdin) {
      //   LOG_ERR("code_loader returns %d\n", nf);
     //    continue;
@@ -437,6 +440,7 @@ int main(int argc, char *argv[]) {
     reset_context(context, &function_table[base_function]);
     enable_gc(context);
     vmrun_threaded(context, 0);
+    printf("vmrun_threaded ok\n");
 
     if (cputime_flag == TRUE) getrusage(RUSAGE_SELF, &ru1);
 
