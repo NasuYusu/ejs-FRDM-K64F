@@ -10,69 +10,16 @@
 #include "prefix.h"
 #define EXTERN
 #include "header.h"
+#include "time_mbed.h"
 
-/*extern uint32_t __jsheap_start;
-extern uint32_t __jsheap_end;*/
-
-/* paste sbc file contents */
-/*char *sbc_contents[] = {"fingerprint 36",
-"funcLength 1",
-"callentry 0",
-"sendentry 0",
-"numberOfLocals 0",
-"numberOfInstructions 13",
-"numberOfConstants 2",
-"setfl 8",
-"fixnum 1 100",
-"string 2 #0=\"x\"",
-"setglobal 2 1",
-"string 1 #1=\"print\"",
-"getglobal 1 1",
-"getglobal 2 2",
-"move 8 2",
-"call 1 1",
-"setfl 8",
-"geta 1",
-"seta 1",
-"ret"};
+/* preload string object */
+#include "preload_global_strings.h"
+#include "preload_strings.h"
 
 /* paste obc file contents */
-// x = 100; print(x)
-/*char *obc_contents[] __attribute__ ((section (".rodata"))) = {0xec ,0x24 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x11 ,0x00 ,0x02 ,0x24 ,0x01
-,0x00 ,0x00 ,0x20 ,0x0d ,0x00 ,0x00 ,0x01 ,0x02 ,0x00 ,0x09 ,0x01 ,0x02 ,0x00 ,0x09 ,0x00 ,0x02
-,0x00 ,0x64 ,0x02 ,0x03 ,0x00 ,0x00 ,0x18 ,0x03 ,0x02 ,0x00 ,0x02 ,0x06 ,0x00 ,0x01 ,0x17 ,0x05
-,0x06 ,0x00 ,0x02 ,0x07 ,0x00 ,0x00 ,0x17 ,0x04 ,0x07 ,0x00 ,0x1a ,0x0d ,0x04 ,0x00 ,0x33 ,0x05
-,0x01 ,0x00 ,0x20 ,0x0d ,0x00 ,0x00 ,0x22 ,0x02 ,0x00 ,0x00 ,0x21 ,0x02 ,0x00 ,0x00 ,0x27 ,0x00
-,0x00 ,0x00 ,0x00 ,0x02 ,0x78 ,0x00 ,0x00 ,0x06 ,0x70 ,0x72 ,0x69 ,0x6e ,0x74 ,0x00};*/
-
-// print("test")
-/*char obc_contents[] = {0xec ,0x24 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x0d ,0x00 ,0x02 ,0x24 ,0x01
-,0x00 ,0x00 ,0x20 ,0x0b ,0x00 ,0x00 ,0x01 ,0x02 ,0x00 ,0x09 ,0x01 ,0x02 ,0x00 ,0x09 ,0x02 ,0x05
-,0x00 ,0x00 ,0x17 ,0x04 ,0x05 ,0x00 ,0x02 ,0x03 ,0x00 ,0x01 ,0x1a ,0x0b ,0x03 ,0x00 ,0x33 ,0x04
-,0x01 ,0x00 ,0x20 ,0x0b ,0x00 ,0x00 ,0x22 ,0x02 ,0x00 ,0x00 ,0x21 ,0x02 ,0x00 ,0x00 ,0x27 ,0x00
-,0x00 ,0x00 ,0x00 ,0x06 ,0x70 ,0x72 ,0x69 ,0x6e ,0x74 ,0x00 ,0x00 ,0x05 ,0x74 ,0x65 ,0x73 ,0x74
-,0x00};*/
-
-// array
-const char obc_contents[] = {0xec ,0x24 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x01 ,0x00 ,0x00 ,0x00 ,0x3b ,0x00 ,0x09 ,0x24 ,0x01
-,0x00 ,0x00 ,0x20 ,0x21 ,0x00 ,0x00 ,0x01 ,0x02 ,0x00 ,0x09 ,0x01 ,0x02 ,0x00 ,0x09 ,0x02 ,0x03
-,0x00 ,0x00 ,0x17 ,0x04 ,0x03 ,0x00 ,0x00 ,0x05 ,0x00 ,0x04 ,0x1d ,0x02 ,0x04 ,0x00 ,0x1a ,0x20
-,0x02 ,0x00 ,0x1a ,0x21 ,0x05 ,0x00 ,0x32 ,0x04 ,0x01 ,0x00 ,0x20 ,0x21 ,0x00 ,0x00 ,0x22 ,0x02
-,0x00 ,0x00 ,0x02 ,0x03 ,0x00 ,0x01 ,0x00 ,0x04 ,0x00 ,0x00 ,0x16 ,0x02 ,0x04 ,0x03 ,0x02 ,0x03
-,0x00 ,0x02 ,0x00 ,0x04 ,0x00 ,0x01 ,0x16 ,0x02 ,0x04 ,0x03 ,0x02 ,0x03 ,0x00 ,0x03 ,0x00 ,0x04
-,0x00 ,0x02 ,0x16 ,0x02 ,0x04 ,0x03 ,0x02 ,0x03 ,0x00 ,0x04 ,0x00 ,0x04 ,0x00 ,0x03 ,0x16 ,0x02
-,0x04 ,0x03 ,0x02 ,0x06 ,0x00 ,0x05 ,0x18 ,0x06 ,0x02 ,0x00 ,0x00 ,0x07 ,0x00 ,0x00 ,0x02 ,0x08
-,0x00 ,0x06 ,0x18 ,0x08 ,0x07 ,0x00 ,0x29 ,0x00 ,0x00 ,0x13 ,0x01 ,0x02 ,0x00 ,0x09 ,0x02 ,0x0b
-,0x00 ,0x07 ,0x17 ,0x0a ,0x0b ,0x00 ,0x02 ,0x0d ,0x00 ,0x05 ,0x17 ,0x0c ,0x0d ,0x00 ,0x02 ,0x0f
-,0x00 ,0x06 ,0x17 ,0x0e ,0x0f ,0x00 ,0x15 ,0x09 ,0x0c ,0x0e ,0x1a ,0x21 ,0x09 ,0x00 ,0x33 ,0x0a
-,0x01 ,0x00 ,0x20 ,0x21 ,0x00 ,0x00 ,0x22 ,0x02 ,0x00 ,0x00 ,0x02 ,0x13 ,0x00 ,0x06 ,0x17 ,0x10
-,0x13 ,0x00 ,0x00 ,0x11 ,0x00 ,0x01 ,0x05 ,0x12 ,0x10 ,0x11 ,0x02 ,0x14 ,0x00 ,0x06 ,0x18 ,0x14
-,0x12 ,0x00 ,0x02 ,0x17 ,0x00 ,0x06 ,0x17 ,0x16 ,0x17 ,0x00 ,0x02 ,0x1a ,0x00 ,0x05 ,0x17 ,0x19
-,0x1a ,0x00 ,0x02 ,0x1b ,0x00 ,0x08 ,0x15 ,0x18 ,0x19 ,0x1b ,0x0f ,0x15 ,0x16 ,0x18 ,0x2a ,0x15
-,0xff ,0xe7 ,0x21 ,0x02 ,0x00 ,0x00 ,0x27 ,0x00 ,0x00 ,0x00 ,0x00 ,0x06 ,0x41 ,0x72 ,0x72 ,0x61
-,0x79 ,0x00 ,0x00 ,0x02 ,0x61 ,0x00 ,0x00 ,0x02 ,0x62 ,0x00 ,0x00 ,0x02 ,0x63 ,0x00 ,0x00 ,0x02
-,0x64 ,0x00 ,0x00 ,0x05 ,0x64 ,0x61 ,0x74 ,0x61 ,0x00 ,0x00 ,0x02 ,0x69 ,0x00 ,0x00 ,0x06 ,0x70
-,0x72 ,0x69 ,0x6e ,0x74 ,0x00 ,0x00 ,0x07 ,0x6c ,0x65 ,0x6e ,0x67 ,0x74 ,0x68 ,0x00};
+const char obc_contents[] = {
+  #include "obc_contents.h"
+};
 
 /*
  *  phase
@@ -119,13 +66,11 @@ FILE *prof_stream;
  * parameter
  */
 int regstack_limit = STACK_LIMIT; /* size of register stack in # of JSValues */
-//#ifdef JS_SPACE_BYTES
-//int heap_limit = JS_SPACE_BYTES; /* heap size in bytes */
-//#else /* JS_SPACE_BYTES */
-//int heap_limit = 1 * 1024 * 1024;
-//#endif /* JS_SPACE_BYTES */
-int heap_limit = 0;
-// max 151532 (151529 + 3)
+#ifdef JS_SPACE_BYTES
+int heap_limit = JS_SPACE_BYTES; /* heap size in bytes */
+#else /* JS_SPACE_BYTES */
+int heap_limit = 1 * 1024 * 1024;
+#endif /* JS_SPACE_BYTES */
 
 #ifdef CALC_CALL
 static uint64_t callcount = 0;
@@ -173,10 +118,11 @@ struct commandline_option  options_table[] = {
 int process_options(int ac, char *av[]) {
   int k;
   char *p;
+  char *po[] = {"./ejsvm", "--gc-prof"};
   struct commandline_option *o;
-
   k = 1;
-  p = av[1];
+  //p = av[1];
+  p = po[1];
   while (k < ac) {
     if (p[0] == '-') {
       o = &options_table[0];
@@ -233,10 +179,10 @@ void print_gc_prof()
     printf(" %"PRId64" ",
            generation > 1 ? pertype_live_count[i] / (generation - 1) : 0);
   }
-  printf("\n");
+  printf("\n\r");
 
-  printf("total alloc bytes = %"PRId64"\n", total_alloc_bytes);
-  printf("total alloc count = %"PRId64"\n", total_alloc_count);
+  printf("total alloc bytes = %"PRId64"\n\r", total_alloc_bytes);
+  printf("total alloc count = %"PRId64"\n\r", total_alloc_count);
   for (i = 0; i < 255; i++)
     if (pertype_alloc_count[i] > 0) {
       printf("  type %02x ", i);
@@ -246,7 +192,7 @@ void print_gc_prof()
              generation > 1 ? pertype_live_bytes[i] / (generation - 1) : 0);
       printf("l.count = %4"PRId64" ",
              generation > 1 ? pertype_live_count[i] / (generation - 1) : 0);
-      printf("%s\n", CELLT_NAME(i));
+      printf("%s\n\r", CELLT_NAME(i));
     }
 }
 #endif /* GC_PROF */
@@ -319,14 +265,13 @@ int main(int argc, char *argv[]) {
   //FILE *fp = NULL;
   struct rusage ru0, ru1;
   int base_function = 0;
-  int k, iter, nf;
+  int k, iter, nf, i, index, b;
   int n = 0;
   Context *context;
+  StringCell *sp;
+  StrCons *sc, *c;
+  JSValue v;
 
-  /*printf("jsheap_start: %x\n\r", (uint32_t) &__jsheap_start);
-  printf("jsheap_end: %x\n\r", (uint32_t) &__jsheap_end);*/
-
-  printf("addr :0x%x\n\r", obc_contents);
 
 #ifdef CALC_TIME
   long long s, e;
@@ -354,7 +299,8 @@ int main(int argc, char *argv[]) {
   poutput_name = NULL;
   profile_flag = coverage_flag = icount_flag = forcelog_flag = FALSE;
 #endif
-  k = process_options(argc, argv);
+  //k = process_options(argc, argv);
+  k = process_options(2, argv);
   if (all_flag == TRUE) {
     lastprint_flag = ftable_flag = trace_flag = TRUE;
 #ifdef PROFILE
@@ -388,16 +334,59 @@ int main(int argc, char *argv[]) {
 #ifdef USE_BOEHMGC
   GC_INIT();
 #endif
-
   init_memory(heap_limit);
   init_string_table(STRING_TABLE_SIZE);
   init_context(regstack_limit, &context);
+  /* put String table */
+  for (i = 0; i < sizeof(preload_global_strings)/sizeof(preload_global_strings[0]); i++) {
+    b = 0;
+    sp = (StringCell *)header_to_payload((header_t *)preload_global_strings[i]);
+        //printf("%i: (%s, %p, %p)\n\r", i, sp->value, &(sp->value), preload_global_strings[i]);
+    v = ptr_to_normal_string(sp);
+    index = (sp->hash) % string_table.size;
+    for (c = string_table.obvector[index]; c != NULL; c = c->next) {
+      if (memcmp(string_value(c->str), string_value(v), sp->length) == 0 &&
+          memcmp("", string_value(v) + (sp->length), 0 + 1) == 0) {
+              b = 1;
+              break;
+            }
+    }
+    if (!b) {
+      assert(is_string(v));
+      sc = (StrCons*) gc_malloc(context, sizeof(StrCons), CELLT_STR_CONS);
+      sc->str = v;
+      sc->next = string_table.obvector[index];
+      string_table.obvector[index] = sc;
+    }
+  }
   init_global_constants();
   init_meta_objects(context);
   init_global_objects(context);
   reset_context(context, function_table);
   context->global = gconsts.g_global;
   printf("init ok\n\r");
+
+  /* put string object in proguram code */
+  for (i = 0; i < sizeof(preload_strings)/sizeof(preload_strings[0]); i++) {
+    b = 0;
+    sp = (StringCell *)header_to_payload((header_t *)preload_strings[i]);
+    v = ptr_to_normal_string(sp);
+    index = (sp->hash) % string_table.size;
+    for (c = string_table.obvector[index]; c != NULL; c = c->next) {
+      if (memcmp(string_value(c->str), string_value(v), sp->length) == 0 &&
+          memcmp("", string_value(v) + (sp->length), 0 + 1) == 0) {
+              b = 1;
+              break;
+            }
+    }
+    if (!b) {
+      assert(is_string(v));
+      sc = (StrCons*) gc_malloc(context, sizeof(StrCons), CELLT_STR_CONS);
+      sc->str = v;
+      sc->next = string_table.obvector[index];
+      string_table.obvector[index] = sc;
+    }
+  }
 
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
@@ -425,6 +414,7 @@ int main(int argc, char *argv[]) {
     //nf = code_loader(context, function_table, n, sbc_contents); // sbc file
     nf = code_loader(context, function_table, n, obc_contents); // obc file
     if (nf > 0) n += nf;
+    printf("codeloader ok\n\r");
     //else if (fp != stdin) {
      //   LOG_ERR("code_loader returns %d\n", nf);
     //    continue;
@@ -451,7 +441,12 @@ int main(int argc, char *argv[]) {
 
     reset_context(context, &function_table[base_function]);
     enable_gc(context);
+    start_time();
     vmrun_threaded(context, 0);
+    end_time();
+    printf("vmrun_threaded ok\n\r");
+    printf("GC count: %d\n\r", gc_count);
+    printf("JSheap size: %d\n\r", js_space.bytes);
 
     if (cputime_flag == TRUE) getrusage(RUSAGE_SELF, &ru1);
 
@@ -628,11 +623,13 @@ void debug_print(Context *context, int n) {
   printf("\n");
 }
 
+#ifdef MBED
 int	getrusage (int a, struct rusage* p) {
   p->ru_utime.tv_sec = 0;
   p->ru_utime.tv_usec = 0;
   return 0;
 }
+#endif /* MBED */
 
 /* Local Variables:      */
 /* mode: c               */
