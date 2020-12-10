@@ -195,7 +195,16 @@ void start_garbage_collection(Context *ctx)
   if (cputime_flag == TRUE)
     getrusage(RUSAGE_SELF, &ru0);
 
+#ifdef GC_COUNT_MBED  
+  gc_count++;
+#endif /* GC_COUNT_MBED */
+#ifdef GC_TIME_MBED
+  start_gctime();
+#endif /* TIME_MBED */
   garbage_collection(ctx);
+#ifdef GC_TIME_MBED
+  end_gctime();
+#endif /* TIME_MBED */
 
   if (cputime_flag == TRUE) {
     time_t sec;

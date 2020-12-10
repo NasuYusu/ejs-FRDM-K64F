@@ -10,15 +10,21 @@
 #include "prefix.h"
 #define EXTERN
 #include "header.h"
+#ifdef TIME_MBED
+#include "time_mbed.h"
+#endif /* TIME_MBED */
 
 /* preload string object */
+#ifdef PRELOAD
 #include "preload_global_strings.h"
 #include "preload_strings.h"
+#endif /* PRELOAD */
 
 /* paste obc file contents */
 const char obc_contents[] = {
   #include "obc_contents.h"
 };
+
 
 /*
  *  phase
@@ -263,14 +269,15 @@ int main(int argc, char *argv[]) {
   //FILE *fp = NULL;
   struct rusage ru0, ru1;
   int base_function = 0;
-  int k, iter, nf, i, index, b;
+  int k, iter, nf;
   int n = 0;
   Context *context;
+#ifdef PRELOAD
+  int i, index, b;
   StringCell *sp;
   StrCons *sc, *c;
   JSValue v;
-
-  printf("obc_contents addr = %p\n\r", obc_contents);
+#endif /* PRELOAD */
 
 #ifdef CALC_TIME
   long long s, e;
@@ -336,6 +343,7 @@ int main(int argc, char *argv[]) {
   init_string_table(STRING_TABLE_SIZE);
   init_context(regstack_limit, &context);
   /* put String table */
+#ifdef PRELOAD
  for (i = 0; i < sizeof(preload_global_strings)/sizeof(preload_global_strings[0]); i++) {
     b = 0;
     sp = (StringCell *)header_to_payload((header_t *)preload_global_strings[i]);
@@ -357,6 +365,7 @@ int main(int argc, char *argv[]) {
       string_table.obvector[index] = sc;
     }
   }
+#endif /* PRELOAD */
   init_global_constants();
   init_meta_objects(context);
   init_global_objects(context);
@@ -365,6 +374,7 @@ int main(int argc, char *argv[]) {
   printf("init ok\n\r");
 
   /* put string object in proguram code */
+#ifdef PREROAD
   for (i = 0; i < sizeof(preload_strings)/sizeof(preload_strings[0]); i++) {
     b = 0;
     sp = (StringCell *)header_to_payload((header_t *)preload_strings[i]);
@@ -385,7 +395,7 @@ int main(int argc, char *argv[]) {
       string_table.obvector[index] = sc;
     }
   }
-
+#endif /* PRELOAD */
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
 #endif /* NO_SRAND */
@@ -412,7 +422,7 @@ int main(int argc, char *argv[]) {
     //nf = code_loader(context, function_table, n, sbc_contents); // sbc file
     nf = code_loader(context, function_table, n, obc_contents); // obc file
     if (nf > 0) n += nf;
-    printf("codeloader ok\n");
+    printf("codeloader ok\n\r");
     //else if (fp != stdin) {
      //   LOG_ERR("code_loader returns %d\n", nf);
     //    continue;
@@ -439,8 +449,25 @@ int main(int argc, char *argv[]) {
 
     reset_context(context, &function_table[base_function]);
     enable_gc(context);
+#ifdef TIME_MBED
+    start_time();
+#endif /* TIME_MBED */
     vmrun_threaded(context, 0);
-    printf("vmrun_threaded ok\n");
+#ifdef TIME_MBED
+    int vm_time = end_time();
+#ifdef PRELOAD
+    printf("after preload ");
+#else
+    printf("before preload ");
+#endif /* PRELOAD */
+    printf("vm time : %d ", vm_time);
+#endif /* TIME_MBED */
+#ifdef GC_TIME_MBED
+    printf("gc time : %d\n\r", get_gctime());
+#endif /* GC_TIME_MBED */
+#ifdef GC_COUNT_MBED
+    printf("gc count : %d\n\r", gc_count);
+#endif /* GC_COUNT_MBED */
 
     if (cputime_flag == TRUE) getrusage(RUSAGE_SELF, &ru1);
 
