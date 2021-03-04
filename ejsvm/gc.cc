@@ -13,6 +13,9 @@
 #define EXTERN extern
 #include "header.h"
 #include "log.h"
+#ifdef GC_TIME_MBED
+#include "time_mbed.h"
+#endif /* GC_TIME_MBED */
 
 /* Objects allocated in the heap
  *                       has   stored as  visible   know

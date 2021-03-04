@@ -26,6 +26,9 @@ extern int run_phase;
 extern int generation;
 extern int gc_sec;
 extern int gc_usec;
+#ifdef GC_COUNT_MBED
+extern int gc_count;
+#endif /* GC_COUNT_MBED */
 
 extern FILE *log_stream;
 

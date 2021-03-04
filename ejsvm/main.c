@@ -16,7 +16,11 @@
 
 /* preload string object */
 #ifdef PRELOAD
+#ifdef ORDER_HASH
+#include "preload_order_global_strings.h"
+#else
 #include "preload_global_strings.h"
+#endif /* ORDER_HASH */
 #include "preload_strings.h"
 #endif /* PRELOAD */
 
@@ -24,6 +28,22 @@
 const char obc_contents[] = {
   #include "obc_contents.h"
 };
+
+#include "program_name.h"
+  /* program name number
+  0: access-binary-trees.js
+  1: access-fannkuch.js
+  2: access-nbody.js
+  3: access-nsieve.js
+  4: bitops-bitops_3bit_bits_in_byte.js
+  5: bitops-bits-in-byte.js
+  6: bitops-bitwise-and.js
+  7: controlflow-recursive.js
+  8: math-cordic.js
+  9: math-partial-sums.js
+  10: math-spectral-norm.js
+  11: string-base64.js
+  */
 
 
 /*
@@ -54,6 +74,10 @@ int forcelog_flag;     /* treat every instruction as ``_log'' one */
 int gcprof_flag;       /* print GC profile information */
 #endif /* GC_PROF */
 
+#ifdef STR_COUNT
+int str_flag = 0;
+#endif /* STR_COUNT */
+
 /*
 #define DEBUG_TESTTEST
 */
@@ -73,8 +97,10 @@ FILE *prof_stream;
 int regstack_limit = STACK_LIMIT; /* size of register stack in # of JSValues */
 #ifdef JS_SPACE_BYTES
 int heap_limit = JS_SPACE_BYTES; /* heap size in bytes */
+//int heap_limit = 155272;
 #else /* JS_SPACE_BYTES */
 int heap_limit = 1 * 1024 * 1024;
+//int heap_limit = 155272;
 #endif /* JS_SPACE_BYTES */
 
 #ifdef CALC_CALL
@@ -345,25 +371,14 @@ int main(int argc, char *argv[]) {
   /* put String table */
 #ifdef PRELOAD
  for (i = 0; i < sizeof(preload_global_strings)/sizeof(preload_global_strings[0]); i++) {
-    b = 0;
     sp = (StringCell *)header_to_payload((header_t *)preload_global_strings[i]);
-        //printf("%i: (%s, %p, %p)\n\r", i, sp->value, &(sp->value), preload_global_strings[i]);
-    v = ptr_to_normal_string(sp);
     index = (sp->hash) % string_table.size;
-    for (c = string_table.obvector[index]; c != NULL; c = c->next) {
-      if (memcmp(string_value(c->str), string_value(v), sp->length) == 0 &&
-          memcmp("", string_value(v) + (sp->length), 0 + 1) == 0) {
-              b = 1;
-              break;
-            }
-    }
-    if (!b) {
+      v = ptr_to_normal_string(sp);
       assert(is_string(v));
       sc = (StrCons*) gc_malloc(context, sizeof(StrCons), CELLT_STR_CONS);
       sc->str = v;
       sc->next = string_table.obvector[index];
       string_table.obvector[index] = sc;
-    }
   }
 #endif /* PRELOAD */
   init_global_constants();
@@ -371,23 +386,24 @@ int main(int argc, char *argv[]) {
   init_global_objects(context);
   reset_context(context, function_table);
   context->global = gconsts.g_global;
-  printf("init ok\n\r");
+  //printf("init ok\n\r");
 
   /* put string object in proguram code */
-#ifdef PREROAD
+#ifdef PRELOAD
   for (i = 0; i < sizeof(preload_strings)/sizeof(preload_strings[0]); i++) {
     b = 0;
     sp = (StringCell *)header_to_payload((header_t *)preload_strings[i]);
-    v = ptr_to_normal_string(sp);
     index = (sp->hash) % string_table.size;
     for (c = string_table.obvector[index]; c != NULL; c = c->next) {
-      if (memcmp(string_value(c->str), string_value(v), sp->length) == 0 &&
+      v = c->str;
+      if (memcmp(sp->value, string_value(v), sp->length) == 0 &&
           memcmp("", string_value(v) + (sp->length), 0 + 1) == 0) {
               b = 1;
               break;
             }
     }
     if (!b) {
+      v = ptr_to_normal_string(sp);
       assert(is_string(v));
       sc = (StrCons*) gc_malloc(context, sizeof(StrCons), CELLT_STR_CONS);
       sc->str = v;
@@ -398,6 +414,8 @@ int main(int argc, char *argv[]) {
 #endif /* PRELOAD */
 #ifndef NO_SRAND
   srand((unsigned)time(NULL));
+#else
+  srand(0);
 #endif /* NO_SRAND */
 
   //for (; k <= iter; k++) {
@@ -422,7 +440,7 @@ int main(int argc, char *argv[]) {
     //nf = code_loader(context, function_table, n, sbc_contents); // sbc file
     nf = code_loader(context, function_table, n, obc_contents); // obc file
     if (nf > 0) n += nf;
-    printf("codeloader ok\n\r");
+    //printf("codeloader ok\n\r");
     //else if (fp != stdin) {
      //   LOG_ERR("code_loader returns %d\n", nf);
     //    continue;
@@ -449,25 +467,47 @@ int main(int argc, char *argv[]) {
 
     reset_context(context, &function_table[base_function]);
     enable_gc(context);
+#ifdef STR_DEBUG
+    printf("before vm run : sram %d, flash %d\n\r", sram_count, flash_count);
+#endif
 #ifdef TIME_MBED
     start_time();
 #endif /* TIME_MBED */
+#ifdef STR_COUNT
+    str_flag = 1;
+#endif /* STR_COUNT */
     vmrun_threaded(context, 0);
 #ifdef TIME_MBED
     int vm_time = end_time();
 #ifdef PRELOAD
-    printf("after preload ");
+    printf("%s, put on flash,", program_name);
 #else
-    printf("before preload ");
+    printf("%s, not put on flash, ", program_name);
 #endif /* PRELOAD */
-    printf("vm time : %d ", vm_time);
+    printf("run time of vm (us): %d", vm_time);
 #endif /* TIME_MBED */
 #ifdef GC_TIME_MBED
-    printf("gc time : %d\n\r", get_gctime());
+    printf(", ");
+    int gctime = get_gctime();
+    printf("gc time (us): %d\n\r", gctime);
+#ifdef TIME_MBED
+#else
+    printf("\n\r");
+#endif /* TIME_MBED */
 #endif /* GC_TIME_MBED */
-#ifdef GC_COUNT_MBED
-    printf("gc count : %d\n\r", gc_count);
+    //printf("vmrun_threaded ok\n\r");
+    //printf("JS heap size: %d\n\r", js_space.bytes);
+#ifdef GC_COUNT_MBED  
+    printf("GC count : %d\n", gc_count);
 #endif /* GC_COUNT_MBED */
+#ifdef STR_DEBUG
+#ifdef PRELOAD
+    printf("%s, put on flash, ", program_name);
+#else
+    printf("%s, not put on flash, ", program_name);
+#endif /* STR_DEBUG */
+    printf("read sram: %d, read flash memory: %d\n\r", sram_count, flash_count);
+#endif /* STR_DEBUG */
 
     if (cputime_flag == TRUE) getrusage(RUSAGE_SELF, &ru1);
 

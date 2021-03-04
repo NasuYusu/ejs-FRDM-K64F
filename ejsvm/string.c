@@ -11,6 +11,13 @@
 #define EXTERN extern
 #include "header.h"
 
+#ifdef STR_COUNT
+int str_counter = 0;
+#endif /* STR_COUNT */
+#ifdef LOOKUP_TRUE
+int lookup_count = 0;
+#endif /* LOOKUP_TRUE */
+
 /* String interface
  *  string_value  -> volatile raw pointer
  *  string_length
@@ -83,6 +90,10 @@ void string_table_put(Context *context, JSValue v, uint32_t hash)
   c->next = string_table.obvector[index];
   string_table.obvector[index] = c;
   /* gc_pop_tmp_root(1); */
+
+#ifdef PRINT_HASH
+  printf("\"%s\", ", string_value(v));
+#endif
 }
 
 /*
@@ -121,6 +132,9 @@ JSValue string_concat_ool(Context *context, JSValue v1, JSValue v2)
 
   GC_PUSH2(v1, v2);
   p = allocate_string(context, len1 + len2);
+#ifdef STR_DEBUG
+  p->memory = 1;
+#endif /* STR_DEBUG */
 #ifdef STROBJ_HAS_HASH
   p->hash = hash;
 #endif /* STROBJ_HAS_HASH */
@@ -144,10 +158,13 @@ JSValue cstr_to_string_ool(Context *context, const char *s)
   hash = update_hash(0, s, len);
   hash = finalise_hash(hash);
 
-  if (string_table_lookup(s, len, hash, &v))
+  if (string_table_lookup(s, len, hash, &v)) {
     return v;
-
+  }
   p = allocate_string(context, len);
+#ifdef STR_DEBUG
+  p->memory = 1;
+#endif /* STR_DEBUG */
 #ifdef STROBJ_HAS_HASH
   p->hash = hash;
 #endif /* STROBJ_HAS_HASH */

@@ -47,6 +47,12 @@
 #define CALLCOUNT_UP()
 #endif
 
+#define PRELOAD
+//#define TIME_MBED
+//#define GC_TIME_MBED
+//#define ORDER_HASH
+//#define PRINT_HASH
+
 #endif /* PREFIX_H_ */
 
 /* Local Variables:      */

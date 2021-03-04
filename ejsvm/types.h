@@ -10,8 +10,14 @@
 #ifndef TYPES_H_
 #define TYPES_H_
 
+//#define STR_DEBUG
+
 #include <limits.h>
 
+#ifdef STR_DEBUG
+extern int sram_count;
+extern int flash_count;
+#endif /* STR_DEBUG */
 /*
  * Struct type declaration
  */
@@ -582,19 +588,11 @@ static inline int normal_flonum_is_nan(JSValue v)
     return 0;
 }
 
-/*
- * String VMDataType Interface
- */
-#define string_value(p)   (get_jsnormal_string_value(p))
-#define string_to_cstr(p) (string_value(p))
-#define string_hash(p)    (normal_string_hash(p))
-#define string_length(p)  (normal_string_length(p))
-#define cstr_to_string(ctx,str) (cstr_to_normal_string((ctx),(str)))
-#define ejs_string_concat(ctx,str1,str2)                \
-  (ejs_normal_string_concat((ctx),(str1),(str2)))
-
 /* Normal String */
 struct string_cell {
+#ifdef STR_DEBUG
+  uint64_t memory;
+#endif /* STR_DEBUG */
 #ifdef STROBJ_HAS_HASH
   uint32_t hash;           /* hash value before computing mod */
   uint32_t length;         /* length of the string */
@@ -602,11 +600,42 @@ struct string_cell {
   char value[BYTES_IN_JSVALUE];
 };
 
+/*
+ * String VMDataType Interface
+ */
+#ifdef STR_DEBUG
+char *string_value(JSValue obj);
+#define macro_string_value(p) (get_jsnormal_string_value(p))
+#else
+#define string_value(p)   (get_jsnormal_string_value(p))
+#endif
+#define string_to_cstr(p) (string_value(p))
+#ifdef STR_DEBUG
+uint32_t string_hash(JSValue obj);
+#define macro_string_hash(p) (normal_string_hash(p))
+#else
+#define string_hash(p)    (normal_string_hash(p))
+#endif /* STR_DEGUB */
+#ifdef STR_DEBUG
+uint32_t string_length(JSValue obj);
+#define macro_string_length(p) (normal_string_length(p))
+#else
+#define string_length(p)  (normal_string_length(p))
+#endif /* STR_DEBUG */
+//#define string_length(p)  (normal_string_length(p))
+#define cstr_to_string(ctx,str) (cstr_to_normal_string((ctx),(str)))
+#define ejs_string_concat(ctx,str1,str2)                \
+  (ejs_normal_string_concat((ctx),(str1),(str2)))
+
+
 #ifdef STROBJ_HAS_HASH
 DEFINE_ACCESSORS(normal_string, StringCell, uint32_t, hash)
 DEFINE_ACCESSORS(normal_string, StringCell, uint32_t, length)
 #endif /* STROBJ_HAS_HASH */
 DEFINE_GETTER(normal_string, StringCell, char*, value)
+#ifdef STR_DEBUG
+DEFINE_GETTER(normal_string, StringCell, uint64_t, memory)
+#endif /* STR_DEBUG */
 
 #ifdef STROBJ_HAS_HASH
 #define normal_string_hash(p)     (get_jsnormal_string_hash(p))
@@ -615,6 +644,9 @@ DEFINE_GETTER(normal_string, StringCell, char*, value)
 #define normal_string_hash(p)     (calc_hash(get_jsnormal_string_value(p)))
 #define normal_string_length(p)   ((uint32_t) strlen(string_value(p)))
 #endif /* STROBJ_HAS_HASH */
+#ifdef STR_DEBUG
+#define normal_string_memory(p)    (get_jsnormal_string_memory(p))
+#endif /* STR_DEBUG */
 
 #define cstr_to_normal_string(ctx, str)  (cstr_to_string_ool((ctx), (str)))
 /* TODO: give a nice name to ejs_string_concat
