@@ -1,6 +1,5 @@
 #!/bin/bash
 
-FILENAME=$1
 OBC="$(basename $1 .js)"
 
 if [ "$2" = "--32bit" ]; then
