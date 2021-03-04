@@ -10,4 +10,4 @@ else
 fi
 od -v -t x1 ${OBC}.obc | sed -e 's/^[0-9][0-9]* */0x/' | sed -e 's/ *$/,/'| sed -e's/  */, 0x/g'| sed '$d' | sed '$s/,$//' > obc_contents.h
 
-#make
+make
