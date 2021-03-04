@@ -147,7 +147,11 @@ HFILES = $(GENERATED_HFILES) \
     gc.h \
     context-inl.h \
     types-inl.h \
-    gc-inl.h
+    gc-inl.h \
+    preload_global_strings.h \
+    preload_strings.h \
+    obc_contents.h \
+    program_name.h
 ifeq ($(USE_VMDL),true)
     HFILES += vmdl-helper.h
 endif
@@ -178,7 +182,8 @@ OFILES = \
     operations.o \
     vmloop.o \
     gc.o \
-    main.o
+    main.o \
+    type.o
 ifeq ($(USE_VMDL),true)
 OFILES += vmdl-helper.o
 endif
@@ -254,7 +259,8 @@ CHECKFILES = $(patsubst %.c,$(CHECKFILES_DIR)/%.c,$(CFILES))
 INSN_FILES = $(INSN_SUPERINSNS) $(INSN_GENERATED) $(INSN_HANDCRAFT)
 
 ifeq ($(MBED), true)
-    LD_SYS_LIBS :=-Wl,--start-group -lstdc++ -lsupc++ -lm -lc -lgcc -lnosys  -Wl,--end-group
+LD_SYS_LIBS :=-Wl,--start-group -lstdc++ -lsupc++ -lm -lc -lgcc -lnosys  -Wl,--end-group
+CPPFLAGS += -DMBED
 endif
 ######################################################
 
@@ -306,7 +312,10 @@ endif
 CHECKFILES_DIR = checkfiles
 GCCHECK_PATTERN = $(EJSVM_DIR)/gccheck.cocci
 
-all: ejsvm ejsc.jar ejsi ejs_cflags.txt ejs_cxxflags.txt ejs_cxxfiles.txt ejs_ofiles.txt ejs_hfiles.txt ejs_insns.txt
+all: ejsvm ejsc.jar ejsi ejs_cflags.txt ejs_cxxflags.txt ejs_cxxfiles.txt ejs_ofiles.txt ejs_hfiles.txt ejs_insns.txt mbed.bash
+
+mbed.bash:
+	cp $(EJSVM_DIR)/mbed.bash .
 
 ejs_cflags.txt:
 	echo $(CPPFLAGS) $(filter-out -std=gnu89,$(CFLAGS)) > ejs_cflags.txt
@@ -571,6 +580,7 @@ clean:
 	rm -rf insns-vmdl
 	rm -f ejsvm ejsvm.spec ejsi ejsc.jar
 	rm -f *.txt
+	rm -f *.bash
 
 cleanest:
 	rm -f *.o $(GENERATED_HFILES) vmloop-cases.inc *.c *.cc *.h
@@ -588,3 +598,4 @@ cleanest:
 	rm -f $(EJSC)
 	make -C $(EJSI_DIR) clean
 	rm -f *.txt
+	rm -f *.bash
