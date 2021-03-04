@@ -387,8 +387,50 @@ public class OBCFileComposer extends OutputFileComposer {
         return buffer.array();
     }
 
-    public static void convert_byte() {
+    public void print_byte(List<String> list) {
+        String str_name;
+        int hash, length, word;
+        byte[] words, hash_byte, len, bytes;
+        for (int i = 0; i < list.size(); i++) {
+            System.out.print("const char preload_string_" + i + "[] = {");
+            str_name = (String)list.get(i);
+            length = str_name.length();
+            hash = update_hash(0, str_name);
+            hash = finalise_hash(hash);
+            word = word_size(8 + length + 1) + 2; // 4byte * 2 + len + 1
 
+            // header
+            System.out.print("0x04, 0x00, 0x00, 0x00, "); // type instruction (String = 4)
+            words = int_to_bytes(word); // 1word
+            for (int j = (words.length - 1); j > -1; j--) {
+                System.out.print(String.format("0x%02x, ", words[j]));
+            }
+
+            // hash
+            hash_byte = int_to_bytes(hash);
+            for (int j = (hash_byte.length - 1); j > -1; j--) {
+                System.out.print(String.format("0x%02x, ", hash_byte[j]));
+            }
+
+            // length
+            len = int_to_bytes(length);
+            for (int j = (len.length - 1); j > -1; j--) {
+                System.out.print(String.format("0x%02x, ", len[j]));
+            }
+
+            // value
+            bytes = str_name.getBytes();
+            for (int j = 0; j < length; j++) System.out.print(String.format("0x%01x, ", bytes[j]));
+                System.out.print("0x00");
+                System.out.println("};");
+        }
+        System.out.println("const char* const preload_strings[] = {");
+        for (int i = 0; i < list.size(); i++) {
+            System.out.print(" preload_string_" + i);
+            if (i < (list.size() - 1)) System.out.println(",");
+            else System.out.println();
+        }
+        System.out.println("};");
     }
 
     /**
@@ -398,9 +440,6 @@ public class OBCFileComposer extends OutputFileComposer {
      *            file name to be output to.
      */
     void output(String fileName) {
-        String str_name;
-        int hash, length, word;
-        byte[] words, hash_byte, len, bytes;
         HashSet<String> strings = new HashSet<String>();
         try {
             FileOutputStream out = new FileOutputStream(fileName);
@@ -443,6 +482,7 @@ public class OBCFileComposer extends OutputFileComposer {
                 }
             }
             out.close();
+
             /* global constants */
             /*List<String> constantsList = Arrays.asList("", "apply", "abs", "address", "PI", "boolean", "now", "pow", "printv", "Number", "debugarray", "false", 
             "toString", "__property_map__", "log", "String", "push", "lastIndexOf", "charCodeAt", "random", "LN10", "pop",
@@ -452,95 +492,11 @@ public class OBCFileComposer extends OutputFileComposer {
             ",", "atan", "MIN_VALUE", "floor", "NEGATIVE_INFINITY", "undefined", "slice", "valueOf", "Array", 
             "fromCharCode", "indexOf", "length", "LOG10E", "Function", "round", "MAX_VALUE", "parseFloat", "charAt", "exp",
              "cos", "reverse", "isNaN", "print", "to_string", "toLocaleString", "asin", "parseInt", "sin", "__proto__", 
-            "Math", " ", "object", "min", "ceil", "[object Object]", "performance");
+            "Math", " ", "object", "min", "ceil", "[object Object]", "performance");*/
+            //print_byte(constantsList);
 
-            for (int i = 0; i < constantsList.size(); i++) {
-                System.out.print("const char preload_global_string_" + i + "[] = {");
-                str_name = (String)constantsList.get(i);
-                length = str_name.length();
-                hash = update_hash(0, str_name);
-                hash = finalise_hash(hash);
-
-                word = word_size(8 + length + 1) + 2; // 4byte * 2 + len + 1
-
-                // header
-                System.out.print("0x4, 0x0, 0x0, 0x0, "); // type instruction (String = 4)
-                words = int_to_bytes(word); // 1word
-                for (int j = (words.length - 1); j > -1; j--) {
-                    System.out.print(String.format("0x%01x, ", words[j]));
-                }
-
-                // hash
-                hash_byte = int_to_bytes(hash);
-                for (int j = (hash_byte.length - 1); j > -1; j--) {
-                    System.out.print(String.format("0x%01x, ", hash_byte[j]));
-                }
-
-                // length
-                len = int_to_bytes(length);
-                for (int j = (len.length - 1); j > -1; j--) {
-                    System.out.print(String.format("0x%01x, ", len[j]));
-                }
-
-                // value
-                bytes = str_name.getBytes();
-                for (int j = 0; j < length; j++) System.out.print(String.format("0x%01x, ", bytes[j]));
-                    System.out.print("0x0");
-                    System.out.println("} > preload_global_strings.h;");
-            }
-            System.out.println("const char* const preload_global_strings[] = {");
-            for (int i = 0; i < constantsList.size(); i++) {
-                System.out.print(" preload_global_string_" + i);
-                if (i < (constantsList.size() - 1)) System.out.print(",");
-                else System.out.println();
-            }
-            System.out.println("};");*/
-            /* end global constants */
-
-            /* preload strings */
             List<String> stringList = new ArrayList<>(strings);
-            for (int i = 0; i < strings.size(); i++) {
-                System.out.print("const char preload_string_" + i + "[] = {");
-                str_name = (String)stringList.get(i);
-                length = str_name.length();
-                hash = update_hash(0, str_name);
-                hash = finalise_hash(hash);
-
-                word = word_size(8 + length + 1) + 2; // 4byte * 2 + len + 1
-
-                // header
-                System.out.print("0x4, 0x0, 0x0, 0x0, "); // type instruction (String = 4)
-                words = int_to_bytes(word); // 1word
-                for (int j = (words.length - 1); j > -1; j--) {
-                    System.out.print(String.format("0x%01x, ", words[j]));
-                }
-
-                // hash
-                hash_byte = int_to_bytes(hash);
-                for (int j = (hash_byte.length - 1); j > -1; j--) {
-                    System.out.print(String.format("0x%01x, ", hash_byte[j]));
-                }
-
-                // length
-                len = int_to_bytes(length);
-                for (int j = (len.length - 1); j > -1; j--) {
-                    System.out.print(String.format("0x%01x, ", len[j]));
-                }
-
-                // value
-                bytes = str_name.getBytes();
-                for (int j = 0; j < length; j++) System.out.print(String.format("0x%01x, ", bytes[j]));
-                    System.out.print("0x0");
-                    System.out.println("};");
-            }
-            System.out.println("const char* const preload_strings[] = {");
-            for (int i = 0; i < strings.size(); i++) {
-                System.out.print(" preload_string_" + i);
-                if (i < (strings.size() - 1)) System.out.println(",");
-                else System.out.println();
-            }
-            System.out.println("};");
-            /* end preload strings */
+            print_byte(stringList);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
