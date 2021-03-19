@@ -150,8 +150,7 @@ HFILES = $(GENERATED_HFILES) \
     gc-inl.h \
     preload_global_strings.h \
     preload_strings.h \
-    obc_contents.h \
-    program_name.h
+    obc_contents.h
 ifeq ($(USE_VMDL),true)
     HFILES += vmdl-helper.h
 endif
@@ -182,8 +181,7 @@ OFILES = \
     operations.o \
     vmloop.o \
     gc.o \
-    main.o \
-    type.o
+    main.o
 ifeq ($(USE_VMDL),true)
 OFILES += vmdl-helper.o
 endif
@@ -580,7 +578,7 @@ clean:
 	rm -rf insns-vmdl
 	rm -f ejsvm ejsvm.spec ejsi ejsc.jar
 	rm -f *.txt
-	rm -f *.bash
+	rm -f mbed.bash
 
 cleanest:
 	rm -f *.o $(GENERATED_HFILES) vmloop-cases.inc *.c *.cc *.h
@@ -598,4 +596,4 @@ cleanest:
 	rm -f $(EJSC)
 	make -C $(EJSI_DIR) clean
 	rm -f *.txt
-	rm -f *.bash
+	rm -f mbed.bash
