@@ -330,13 +330,13 @@ STATIC void print_memory_status(void)
 }
 #endif /* GC_DEBUG */
 
-#ifdef MBED
+#ifdef MBED_TRUE
 int	getrusage (int a, struct rusage* p) {
   p->ru_utime.tv_sec = 0;
   p->ru_utime.tv_usec = 0;
   return 0;
 }
-#endif /* MBED */
+#endif /* MBED_TRUE */
 
 /* Local Variables:      */
 /* mode: c               */

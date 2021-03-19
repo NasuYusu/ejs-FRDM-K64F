@@ -29,7 +29,7 @@ const char obc_contents[] = {
   #include "obc_contents.h"
 };
 
-#include "program_name.h"
+//#include "program_name.h"
   /* program name number
   0: access-binary-trees.js
   1: access-fannkuch.js
@@ -684,13 +684,13 @@ void debug_print(Context *context, int n) {
   printf("\n");
 }
 
-#ifdef MBED
+#ifdef MBED_TRUE
 int	getrusage (int a, struct rusage* p) {
   p->ru_utime.tv_sec = 0;
   p->ru_utime.tv_usec = 0;
   return 0;
 }
-#endif /* MBED */
+#endif /* MBED_TRUE */
 
 /* Local Variables:      */
 /* mode: c               */

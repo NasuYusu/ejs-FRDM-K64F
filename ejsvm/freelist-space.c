@@ -34,11 +34,11 @@ STATIC struct space debug_js_shadow;
  * prototype
  */
 /* space */
-#ifdef MBED
+#ifdef MBED_TRUE
 STATIC void create_space(struct space *space, char* name);
 #else
 STATIC void create_space(struct space *space, size_t bytes, char* name);
-#endif /* MBED */
+#endif /* MBED_TRUE */
 #ifdef GC_DEBUG
 STATIC header_t *get_shadow(void *ptr);
 #endif /* GC_DEBUG */
@@ -51,10 +51,10 @@ STATIC void check_invariant(void);
 STATIC void print_memory_status(void);
 #endif /* GC_DEBUG */
 
-#ifdef MBED
+#ifdef MBED_TRUE
 extern uintptr_t __jsheap_start;
 extern uintptr_t __jsheap_end;
-#endif /* MBED */
+#endif /* MBED_TRUE */
 
 
 /*
@@ -71,7 +71,7 @@ STATIC_INLINE size_t get_payload_granules(header_t *hdrp)
 /*
  *  Space
  */
-#ifdef MBED
+#ifdef MBED_TRUE
 STATIC void create_space(struct space *space, char *name)
 {
   struct free_chunk *p;
@@ -80,9 +80,6 @@ STATIC void create_space(struct space *space, char *name)
   p = (struct free_chunk *)
     (((uintptr_t)&__jsheap_start + BYTES_IN_GRANULE - 1) & ~(BYTES_IN_GRANULE - 1));
   bytes = ((uintptr_t) &__jsheap_end - (uintptr_t)p);
-  printf("__jsheap_start : 0x%x\n\r", (uintptr_t) &__jsheap_start);
-  printf("p :0x%x\n\r", (uintptr_t)p);
-  printf("bytes : 0x%x\n\r", bytes);
 
 
   p->header = compose_header(bytes >> LOG_BYTES_IN_GRANULE, 0, CELLT_FREE);
@@ -101,8 +98,6 @@ STATIC void create_space(struct space *space, size_t bytes, char *name)
   addr = (uintptr_t) malloc(bytes + BYTES_IN_GRANULE - 1);
   p = (struct free_chunk *)
     ((addr + BYTES_IN_GRANULE - 1) & ~(BYTES_IN_GRANULE - 1));
-  printf("addr : 0x%x\n\r", addr);
-  printf("bytes 0x%x\n\r", bytes);
 
   p->header = compose_header(bytes >> LOG_BYTES_IN_GRANULE, 0, CELLT_FREE);
   p->next = NULL;
@@ -112,7 +107,7 @@ STATIC void create_space(struct space *space, size_t bytes, char *name)
   space->freelist = p;
   space->name = name;
 }
-#endif /* MBED */
+#endif /* MBED_TRUE */
 
 #ifdef GC_DEBUG
 header_t *get_shadow(void *ptr)
@@ -191,17 +186,17 @@ STATIC_INLINE void* js_space_alloc(struct space *space,
 
 void space_init(size_t bytes)
 {
-  #ifdef MBED
+  #ifdef MBED_TRUE
   create_space(&js_space, "js_space");
   #else
   create_space(&js_space, bytes, "js_space");
-  #endif /* MBED */
+  #endif /* MBED_TRUE */
 #ifdef GC_DEBUG
-  #ifdef MBED
+  #ifdef MBED_TRUE
   create_space(&debug_js_shadow, "debug_js_shadow");
   #else
   create_space(&debug_js_shadow, bytes, "debug_js_shadow");
-  #endif /* MBED */
+  #endif /* MBED_TRUE */
 #endif /* GC_DEBUG */
 }
 
