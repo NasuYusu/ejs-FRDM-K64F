@@ -42,20 +42,22 @@ USE_VMDL = false
 ## MBED
 ##
 #MBED = true
-MBED = false
+#MBED = false
 
 ##
 ## commands
 ##
 
 ## Use Mbed
-ifeq ($(MBED), true)
-	CC = arm-none-eabi-gcc
-	CXX = arm-none-eabi-g++
-else
-	CC = gcc
-	CXX = gcc
+#ifeq ($(MBED), true)
+#	CC = arm-none-eabi-gcc
+#	CXX = arm-none-eabi-g++
+#else
+#	CC = gcc
+#	CXX = gcc
 endif
+CC = gcc
+CXX = gcc
 SED = gsed
 # SED = sed
 PYTHON = python
@@ -159,8 +161,8 @@ CPPFLAGS       += -DVERIFY_BIBOP
 CPPFLAGS    += -DNO_SRAND
 
 ## Use Mbed
-ifeq ($(MBED), true)
-	CPPFLAGS 	+= -DMBED
-endif
+#ifeq ($(MBED), true)
+#	CPPFLAGS 	+= -DMBED
+#endif
 
 include $(EJSVM_DIR)/common.mk
